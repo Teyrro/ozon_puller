@@ -1,18 +1,18 @@
 import asyncio
+import os
 from collections.abc import Callable, Generator
 from typing import Any
 
 import pytest
-from sqlalchemy import NullPool, select, text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from starlette.testclient import TestClient
 
-import settings
-from db.models import User
-from db.session import get_db
+from app.core import settings
+from app.core.hashing import Hasher
+from app.db.models import User
+from app.db.session import get_db
 from main import app
-
-# create async engine for interaction with database
 
 CLEAN_TABLES = [
 	'users',
@@ -29,9 +29,9 @@ def event_loop():
 @pytest.fixture(scope='session', autouse=True)
 async def run_migrations():
 	pass
-	# os.system("alembic init --template async test_migrations")
-	# os.system('alembic revision --autogenerate -m "test running migrations"')
-	# os.system("alembic upgrade heads")
+	os.system('alembic init --template async test_migrations')
+	os.system('alembic revision --autogenerate -m "tests running migrations"')
+	os.system('alembic upgrade heads')
 
 
 @pytest.fixture(scope='session')
@@ -43,7 +43,7 @@ async def async_session_test():
 
 @pytest.fixture(scope='function', autouse=True)
 async def clean_tables(async_session_test):
-	"""Clean data in all tables before running test function"""
+	"""Clean data in all tables before running tests function"""
 	async with async_session_test() as session, session.begin():
 		for table_for_cleaning in CLEAN_TABLES:
 			await session.execute(text(f""" TRUNCATE TABLE {table_for_cleaning};"""))
@@ -51,9 +51,7 @@ async def clean_tables(async_session_test):
 
 async def _get_test_db():
 	try:
-		test_engine = create_async_engine(settings.TEST_DATABASE_URL, future=True, echo=True, poolclass=NullPool)
-
-		# create session for the interaction with database
+		test_engine = create_async_engine(settings.TEST_DATABASE_URL, future=True, echo=True)
 		test_async_session = async_sessionmaker(test_engine, expire_on_commit=False, class_=AsyncSession)
 
 		yield test_async_session()
@@ -82,13 +80,14 @@ async def get_user_from_database(async_session_test):
 
 
 @pytest.fixture
-async def create_user_in_database(async_session_test) -> Callable | None:
+async def create_user_in_database(async_session_test) -> Callable:
 	async def create_user_in_database(user: dict):
 		new_user = User(
 			name=user['name'],
 			surname=user['surname'],
 			email=user['email'],
 			is_active=user['is_active'],
+			hashed_password=Hasher.get_password_hash(user['password']),
 		)
 		async with async_session_test() as session:
 			session.add(new_user)
