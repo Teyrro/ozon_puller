@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.hashing import Hasher
-from app.db.dals import get_user_by_email
+from app.core.security import verify_password
+from app.db.crud import get_user_by_email
 from app.db.models import User
 
 
@@ -16,6 +16,6 @@ async def authenticate_user(
     user = await get_user_by_email_for_auth(email, session)
     if user is None:
         return
-    if not Hasher.verify_password(password, user.hashed_password):
+    if not verify_password(password, user.hashed_password):
         return
     return user

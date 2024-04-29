@@ -1,11 +1,11 @@
+from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from app.api.deps import SessionDep, get_db
+from app.api.deps import SessionDep, UserAuthDep
 from app.api.models import (
     DeleteUserResponse,
     ShowUser,
@@ -39,7 +39,7 @@ async def create_user(user: UserCreate, db: SessionDep) -> ShowUser:
 
 @user_router.delete("/", response_model=DeleteUserResponse)
 async def delete_user(
-    user_id: UUID, session: AsyncSession = Depends(get_db)
+    user_id: UUID, session: SessionDep, current_user: UserAuthDep
 ) -> DeleteUserResponse:
     deleted_user_id = await _delete_new_user(user_id, session)
     if deleted_user_id is None:
@@ -51,7 +51,9 @@ async def delete_user(
 
 
 @user_router.get("/", response_model=ShowUser)
-async def get_user_by_id(user_id: UUID, session: SessionDep) -> ShowUser:
+async def get_user_by_id(
+    user_id: UUID, session: SessionDep, current_user: UserAuthDep
+) -> ShowUser:
     user = await _get_user_by_id(user_id, session)
     if user is None:
         raise HTTPException(
@@ -63,8 +65,11 @@ async def get_user_by_id(user_id: UUID, session: SessionDep) -> ShowUser:
 
 @user_router.patch("/", response_model=UpdatedUserResponse)
 async def update_user_by_id(
-    user_id: UUID, body: UpdateUserRequest, session: SessionDep
-) -> UpdatedUserResponse:
+    user_id: UUID,
+    body: UpdateUserRequest,
+    session: SessionDep,
+    current_user: UserAuthDep,
+) -> Any:
     updated_user_params = body.dict(exclude_none=True)
     if updated_user_params == {}:
         raise HTTPException(

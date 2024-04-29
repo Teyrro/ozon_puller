@@ -3,8 +3,8 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.models import ShowUser, UserCreate
-from app.core.hashing import Hasher
-from app.db.dals import create_user, delete_user, get_user_by_id, update_user
+from app.core.security import get_password_hash
+from app.db.crud import create_user, delete_user, get_user_by_id, update_user
 
 
 async def _create_new_user(user: UserCreate, session: AsyncSession) -> ShowUser:
@@ -13,7 +13,7 @@ async def _create_new_user(user: UserCreate, session: AsyncSession) -> ShowUser:
             name=user.name,
             surname=user.surname,
             email=user.email,
-            hashed_password=Hasher.get_password_hash(user.password),
+            hashed_password=get_password_hash(user.password),
             session=session,
         )
         return ShowUser(

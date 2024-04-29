@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.api.routes.action.login import get_user_by_email_for_auth
-from app.core import settings
+from app.core.config import settings
 from app.db.models import User
 from app.db.session import get_db
 
@@ -34,10 +34,10 @@ async def get_current_user_from_token(token: TokenDep, session: SessionDep):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = get_user_by_email_for_auth(email, session)
+    user = await get_user_by_email_for_auth(email, session)
     if user is None:
         raise credentials_exception
     return user
 
 
-CurrentUser = Annotated[User, Depends(get_current_user_from_token)]
+UserAuthDep = Annotated[User, Depends(get_current_user_from_token)]

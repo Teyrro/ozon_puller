@@ -8,7 +8,7 @@ from starlette import status
 from app.api.deps import SessionDep, get_current_user_from_token
 from app.api.models import Token
 from app.api.routes.action.login import authenticate_user
-from app.core import settings
+from app.core.config import settings
 from app.core.security import create_access_token
 from app.db.models import User
 

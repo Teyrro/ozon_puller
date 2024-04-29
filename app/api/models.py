@@ -19,7 +19,6 @@ class NameSurnameValidator(BaseModel):
     surname: str
 
     @field_validator("name")
-    @classmethod
     def validate_name(cls, value):
         if not LETTER_MATCH_PATTERN.match(value):
             raise HTTPException(
@@ -29,7 +28,6 @@ class NameSurnameValidator(BaseModel):
         return value
 
     @field_validator("surname")
-    @classmethod
     def validate_surname(cls, value):
         if not LETTER_MATCH_PATTERN.match(value):
             raise HTTPException(
@@ -37,6 +35,13 @@ class NameSurnameValidator(BaseModel):
                 detail="Surname should contains only letters",
             )
         return value
+
+
+class UserCreate(NameSurnameValidator, BaseModel):
+    name: str
+    surname: str
+    email: EmailStr
+    password: str
 
 
 class ShowUser(TunedModel):
@@ -47,16 +52,10 @@ class ShowUser(TunedModel):
     is_active: bool
 
 
-class UserCreate(NameSurnameValidator, BaseModel):
-    name: str
-    surname: str
-    email: EmailStr
-    password: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class UpdateUserRequest(NameSurnameValidator, BaseModel):
+    name: constr(min_length=1) | None = None
+    surname: constr(min_length=1) | None = None
+    email: EmailStr | None = None
 
 
 class DeleteUserResponse(BaseModel):
@@ -67,7 +66,6 @@ class UpdatedUserResponse(BaseModel):
     updated_user_id: uuid.UUID
 
 
-class UpdateUserRequest(NameSurnameValidator, BaseModel):
-    name: constr(min_length=1) | None = None
-    surname: constr(min_length=1) | None = None
-    email: EmailStr | None = None
+class Token(BaseModel):
+    access_token: str
+    token_type: str
