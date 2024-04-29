@@ -6,36 +6,23 @@ services:
   db:
     image: postgres
     restart: always
-    # set shared memory limit when using docker-compose
-    shm_size: 128mb
-    # or set shared memory limit when deploy via swarm stack
-    #volumes:
-    #  - type: tmpfs
-    #    target: /dev/shm
-    #    tmpfs:
-    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ozon
-      POSTGRES_PASSWORD: ozon
-      POSTGRES_DB: ozon
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
     ports:
       - "5432:5432"
   db_test:
     container_name: "db_test"
     image: postgres
     restart: always
-    shm_size: 128mb
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ozon_test
-      POSTGRES_PASSWORD: ozon_test
-      POSTGRES_DB: ozon_test
+      - POSTGRES_PASSWORD=${TEST_POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${TEST_POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${TEST_POSTGRES_DB?Variable not set}
     ports:
       - "5433:5432"
-
-
-
-#  adminer:
-#    image: adminer
-#    restart: always
-#    ports:
-#      - "8080:8080"

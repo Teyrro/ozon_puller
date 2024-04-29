@@ -1,14 +1,11 @@
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 
-from api.handlers import user_router
+from app.api.main import main_api_router
 
-app = FastAPI(title='OzonPuller')
+app = FastAPI(title="OzonPuller")
 
-main_api_router = APIRouter()
-
-main_api_router.include_router(user_router, prefix='/user', tags=['user'])
 app.include_router(main_api_router)
 
-if __name__ == '__main__':
-	uvicorn.run(app, host='0.0.0.0', port=8000)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
