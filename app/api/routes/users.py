@@ -14,10 +14,12 @@ from app.api.models import (
     UserCreate,
 )
 from app.api.routes.action.users import (
+    RequestAction,
     _create_new_user,
     _delete_new_user,
     _get_user_by_id,
     _update_user,
+    check_user_permissions,
 )
 
 # logger = getLogger(__name__)
@@ -41,6 +43,20 @@ async def create_user(user: UserCreate, db: SessionDep) -> ShowUser:
 async def delete_user(
     user_id: UUID, session: SessionDep, current_user: UserAuthDep
 ) -> DeleteUserResponse:
+    user_for_deletion = await _get_user_by_id(user_id, session)
+    if user_for_deletion is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found",
+        )
+    if not check_user_permissions(
+        target_user=user_for_deletion,
+        current_user=current_user,
+        action=RequestAction.DELETE,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
+        )
     deleted_user_id = await _delete_new_user(user_id, session)
     if deleted_user_id is None:
         raise HTTPException(
@@ -60,7 +76,13 @@ async def get_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {user_id} not found",
         )
-    return user
+    return ShowUser(
+        user_id=user.user_id,
+        name=user.name,
+        surname=user.surname,
+        email=user.email,
+        is_active=user.is_active,
+    )
 
 
 @user_router.patch("/", response_model=UpdatedUserResponse)
@@ -76,10 +98,18 @@ async def update_user_by_id(
             status_code=422,
             detail="At least one parameter for user update info should be provided",
         )
-    user = await _get_user_by_id(user_id, session)
-    if user is None:
+    user_for_update = await _get_user_by_id(user_id, session)
+    if user_for_update is None:
         raise HTTPException(
             status_code=404, detail=f"User with id {user_id} not found."
+        )
+    if not check_user_permissions(
+        target_user=user_for_update,
+        current_user=current_user,
+        action=RequestAction.UPDATE,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
         )
 
     try:
