@@ -3,17 +3,23 @@ from uuid import UUID
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import User
+from app.db.models import PortalRole, User
 
 
 async def create_user(
-    name: str, surname: str, email: str, hashed_password: str, session: AsyncSession
+    name: str,
+    surname: str,
+    email: str,
+    hashed_password: str,
+    roles: list[PortalRole],
+    session: AsyncSession,
 ) -> User:
     new_user = User(
         name=name,
         surname=surname,
         email=email,
         hashed_password=hashed_password,
+        roles=roles,
     )
     session.add(new_user)
     await session.flush()

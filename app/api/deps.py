@@ -15,7 +15,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
 
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
-
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
 
 
@@ -41,3 +40,12 @@ async def get_current_user_from_token(token: TokenDep, session: SessionDep):
 
 
 UserAuthDep = Annotated[User, Depends(get_current_user_from_token)]
+
+
+def get_current_active_superadmin(current_user: UserAuthDep) -> User:
+    if not current_user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This user don't have enough privileges",
+        )
+    return current_user
