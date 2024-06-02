@@ -1,5 +1,6 @@
 import asyncio
-import os
+import pathlib
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -8,6 +9,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from dotenv import load_dotenv
+from sqlmodel import SQLModel
+
+from app.core.config import settings
+from app.models import *
+
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 load_dotenv()
 
@@ -22,9 +29,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.db.models import Base
-target_metadata = Base.metadata
-
+target_metadata = SQLModel.metadata
 
 # target_metadata = None
 
@@ -32,13 +37,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-def get_url():
-    user = os.getenv("POSTGRES_USER", "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "")
-    server = os.getenv("POSTGRES_SERVER", "db")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    db = os.getenv("POSTGRES_DB", "app")
-    return f"postgresql+asyncpg://{user}:{password}@{server}:{port}/{db}"
+db_url = str(settings.ASYNC_DATABASE_URI)
 
 
 def run_migrations_offline() -> None:
@@ -53,7 +52,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = get_url()
+    url = db_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -78,7 +77,7 @@ async def run_async_migrations() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = get_url()
+    configuration["sqlalchemy.url"] = db_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",

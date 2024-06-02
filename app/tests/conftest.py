@@ -1,21 +1,27 @@
 import asyncio
-from collections.abc import Callable, Generator
-from datetime import timedelta
+from collections.abc import AsyncGenerator, Coroutine
 from typing import Any
 
 import pytest
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from starlette.testclient import TestClient
+import pytest_asyncio
+from httpx import AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.core.config import settings
-from app.core.security import create_access_token, get_password_hash
-from app.db.models import Base, User
-from app.db.session import get_db
-from main import app
+from app.core.init_db import init_db
+from app.db.session import SessionLocal
+from app.main import app
+from app.schemas.role_schema import IRoleEnum
+from app.tests.utils.user import authentication_token_from_email, create_random_user
+from app.tests.utils.utils import get_superuser_token_headers
 
 CLEAN_TABLES = [
-    "users",
+    "\"User\"",
 ]
 
 
@@ -29,93 +35,55 @@ def event_loop():
 @pytest.fixture(scope="session")
 async def async_engine():
     engine = create_async_engine(
-        str(settings.TEST_SQLALCHEMY_DATABASE_URI), future=True, echo=True
-    )
-    yield engine
-
-
-@pytest.fixture(scope="session")
-async def async_session_test():
-    engine = create_async_engine(
-        str(settings.TEST_SQLALCHEMY_DATABASE_URI), future=True, echo=True
+        str(settings.ASYNC_DATABASE_URI), future=True, echo=True
     )
     async_session = async_sessionmaker(
         engine, expire_on_commit=False, class_=AsyncSession
     )
-    yield async_session
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def prepare_database(async_engine):
-    async with async_engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
-    async with async_engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
-
-@pytest.fixture(scope="function", autouse=True)
-async def clean_tables(async_session_test):
-    """Clean data in all tables before running tests function"""
-    async with async_session_test() as session, session.begin():
-        for table_for_cleaning in CLEAN_TABLES:
-            await session.execute(text(f""" TRUNCATE TABLE {table_for_cleaning};"""))
-
-
-async def _get_test_db():
-    try:
-        test_engine = create_async_engine(
-            str(settings.TEST_SQLALCHEMY_DATABASE_URI), future=True, echo=True
-        )
-        test_async_session = async_sessionmaker(
-            test_engine, expire_on_commit=False, class_=AsyncSession
-        )
-        yield test_async_session()
-    finally:
-        pass
+    yield async_session()
 
 
 @pytest.fixture(scope="function")
-async def client() -> Generator[TestClient, Any, None]:
-    """
-    Create a new FastAPI TestClient that uses the `db_session` fixture to override
-    the `get_db` dependency that is injected into routes.
-    """
-    app.dependency_overrides[get_db] = _get_test_db
-    with TestClient(app) as client:
+async def async_session_test():
+    engine = create_async_engine(
+        str(settings.ASYNC_DATABASE_URI), future=True, echo=True
+    )
+    async_session = async_sessionmaker(
+        engine, expire_on_commit=False, class_=AsyncSession
+    )
+    yield async_session()
+
+
+@pytest.fixture(scope="function", autouse=True)
+async def prepare_database(async_session_test):
+    async with async_session_test as session:
+        await init_db(session)
+    yield
+    async with async_session_test as session:
+        for table_for_cleaning in CLEAN_TABLES:
+            await session.execute(text(f""" TRUNCATE TABLE {table_for_cleaning} CASCADE;"""))
+        await session.commit()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def client(async_session_test) -> AsyncGenerator[AsyncClient, Any]:
+    async with AsyncClient(app=app, base_url="http://testserver") as client:
         yield client
 
 
-@pytest.fixture
-async def get_user_from_database(async_session_test):
-    async def get_user_from_database_by_uuid(user_id: str) -> User:
-        async with async_session_test() as session:
-            return await session.scalar(select(User).where(User.user_id == user_id))
-
-    return get_user_from_database_by_uuid
+@pytest_asyncio.fixture
+async def create_user(async_session_test):
+    return await create_random_user(db=async_session_test())
 
 
-@pytest.fixture
-async def create_user_in_database(async_session_test) -> Callable:
-    async def create_user_in_database(user: dict):
-        new_user = User(
-            name=user["name"],
-            surname=user["surname"],
-            email=user["email"],
-            is_active=user["is_active"],
-            hashed_password=get_password_hash(user["password"]),
-            roles=user["roles"],
-        )
-        async with async_session_test() as session:
-            session.add(new_user)
-            await session.commit()
-            return new_user.user_id
-
-    return create_user_in_database
+@pytest_asyncio.fixture(scope="function")
+async def superuser_token_headers(client: AsyncClient) -> dict[str, str]:
+    return await get_superuser_token_headers(client)
 
 
-def create_test_auth_for_user(email: str) -> dict[str, str]:
-    access_token = create_access_token(
-        data={"sub": email},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+@pytest_asyncio.fixture(scope="function")
+async def normal_user_token_headers(client: AsyncClient, async_session_test: SessionLocal) -> Coroutine[
+    Any, Any, dict[str, str]]:
+    return await authentication_token_from_email(
+        client=client, email=settings.EMAIL_TEST_USER, db=async_session_test, role=IRoleEnum.user
     )
-    return {"Authorization": f"Bearer {access_token}"}
