@@ -1,192 +1,223 @@
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi_pagination import Params, add_pagination
 from sqlalchemy.exc import IntegrityError
 from starlette import status
 
-from app.api.deps import SessionDep, UserAuthDep, get_current_active_superadmin
-from app.api.models import (
-    DeleteUserResponse,
-    ShowUser,
-    UpdatedUserResponse,
-    UpdateUserRequest,
-    UserCreate,
+from app import crud
+from app.api import deps
+from app.api.deps import UserAuthDep
+from app.api.routes.servises.users import UserService
+from app.deps import user_deps
+from app.models import Role, User
+from app.schemas.response_schema import (
+    IDeleteResponseBase,
+    IGetResponseBase,
+    IGetResponsePaginated,
+    IPostResponseBase,
+    IPutResponseBase,
+    MessageResponse,
+    create_response,
 )
-from app.api.routes.action.users import (
-    RequestAction,
-    _create_new_user,
-    _delete_new_user,
-    _get_user_by_id,
-    _update_user,
-    check_user_permissions,
+from app.schemas.role_schema import IRoleEnum
+from app.schemas.user_schema import (
+    IUserCreate,
+    IUserRead,
+    IUserStatus,
+    IUserUpdateMe,
+    IUserUpdatePassword,
 )
+from app.utils.exceptions.common_exceptions import IdNotFoundException
+from app.utils.exceptions.user_exceptions import UserSelfDeleteException
 
 # logger = getLogger(__name__)
 
 user_router = APIRouter()
+add_pagination(user_router)
 
 
-@user_router.post("/", response_model=ShowUser, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate, db: SessionDep) -> ShowUser:
+@user_router.post("/",
+                  status_code=status.HTTP_201_CREATED,
+                  dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))])
+async def create_user(
+        user_in: IUserCreate,
+) -> IPostResponseBase[IUserRead]:
+    """
+    Create User
+
+    Required roles:
+    - admin
+    """
     try:
-        return await _create_new_user(user, db)
+        role = await crud.role.get(id=user_in.role_id)
+        if not role:
+            raise IdNotFoundException(Role, id=user_in.role_id)
+        user_service = UserService(crud.user)
+        user = await user_service.create(user_in)
+        return create_response(data=user)
     except IntegrityError as err:
-        # logger.error(err)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Database error {err}",
         ) from err
 
 
-@user_router.delete("/", response_model=DeleteUserResponse)
+@user_router.get(
+    "/me"
+)
+async def read_user_me(current_user: UserAuthDep) -> IGetResponseBase[IUserRead]:
+    """
+    Get current user.
+    """
+    return create_response(data=current_user)
+
+
+@user_router.get(
+    "/{user_id}",
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+)
+async def read_user_by_id(
+        user_id: UUID
+) -> IGetResponseBase[IUserRead]:
+    """
+    Get user by id
+
+    Required roles:
+    - admin
+    """
+    user_service = UserService(crud.user)
+    user = await user_service.read_user_by_id(user_id)
+    return create_response(data=user)
+
+
+@user_router.get(
+    "/list/",
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))]
+)
+async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserRead]:
+    """
+    Retrieve users.
+
+    Required roles:
+    - admin
+    """
+    users = await crud.user.get_multi_paginated(params=params)
+    return create_response(data=users)
+
+
+@user_router.get(
+    "/list/by_role_name",
+    dependencies=[Depends(
+        deps.get_current_user([IRoleEnum.admin]))],
+    response_model=IGetResponsePaginated[IUserRead]
+)
+async def read_users_list_by_role_name(
+        name: str = "",
+        user_status: Annotated[
+            IUserStatus,
+            Query(
+                title="User status",
+                description="User status, It is optional. Default is active",
+            ),
+        ] = IUserStatus.active,
+        role_name: str = "",
+        params: Params = Depends(),
+) -> Any:
+    """
+    Retrieve users by role name and status. Requires admin role
+
+    Required roles:
+    - admin
+    """
+    user_service = UserService(crud.user)
+    try:
+        users = await user_service.read_users_by_role_name(user_status,
+                                                           role_name,
+                                                           name,
+                                                           params)
+        return create_response(data=users)
+    except IntegrityError as err:
+        print(err)
+
+
+
+@user_router.get(
+    "/order_by_created_at/",
+    dependencies=[
+        Depends(
+            deps.get_current_user(
+                [IRoleEnum.admin,
+                 IRoleEnum.manager]))
+    ]
+)
+async def get_user_list_order_by_created_at(
+        params: Params = Depends(),
+) -> IGetResponsePaginated[IUserRead]:
+    """
+    Gets a paginated list of users ordered by created datetime
+
+    Required roles:
+    - admin
+    - manager
+    """
+    users = await crud.user.get_multi_paginated_ordered(
+        params=params, order_by="created_at"
+    )
+    return create_response(data=users)
+
+
+@user_router.delete("/{user_id}")
 async def delete_user(
-    user_id: UUID, session: SessionDep, current_user: UserAuthDep
-) -> DeleteUserResponse:
-    user_for_deletion = await _get_user_by_id(user_id, session)
-    if user_for_deletion is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        )
-    if not check_user_permissions(
-        target_user=user_for_deletion,
-        current_user=current_user,
-        action=RequestAction.DELETE,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
-        )
-    deleted_user_id = await _delete_new_user(user_id, session)
-    if deleted_user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        ) from None
-    return DeleteUserResponse(deleted_user_id=deleted_user_id)
+        user_id: UUID = Depends(user_deps.is_valid_user_id),
+        current_user: User = Depends(
+            deps.get_current_user(required_roles=[IRoleEnum.admin])
+        ),
+) -> IDeleteResponseBase[IUserRead]:
+    """
+    Delete user
+
+    Required roles:
+    - admin
+    """
+    user_service = UserService(crud.user)
+    if current_user.id == user_id:
+        raise UserSelfDeleteException()
+
+    deleted_user = await user_service.delete(user_id)
+    return create_response(data=deleted_user)
 
 
 @user_router.patch(
-    "/admin_privilege",
-    response_model=UpdatedUserResponse,
-    dependencies=[Depends(get_current_active_superadmin)],
+    "/me/password")
+async def update_password_me(
+        *, body: IUserUpdatePassword, current_user: UserAuthDep
+) -> MessageResponse:
+    """
+    Update own password.
+    """
+    user_service = UserService(crud.user)
+    await user_service.update_password_me(body, current_user)
+    return MessageResponse(message="Password updated successfully")
+
+
+@user_router.patch(
+    "/me"
 )
-async def grant_admin_privilege(
-    user_id: UUID,
-    db: SessionDep,
-    current_user: UserAuthDep,
-):
-    if current_user.user_id == user_id:
-        raise HTTPException(
-            status_code=400, detail="Cannot manage privileges of itself."
-        )
-    user_for_promotion = await _get_user_by_id(user_id, db)
-    if user_for_promotion.is_admin or user_for_promotion.is_superadmin:
-        raise HTTPException(
-            status_code=409,
-            detail=f"User with id {user_id} already promoted to admin / superadmin.",
-        )
-    if user_for_promotion is None:
-        raise HTTPException(
-            status_code=404, detail=f"User with id {user_id} not found."
-        )
-    updated_user_params = {"roles": user_for_promotion.promote_to_admin()}
+async def update_user_me(
+        body: IUserUpdateMe,
+        current_user: UserAuthDep,
+) -> IPutResponseBase[IUserRead]:
+    user_service = UserService(crud.user)
     try:
-        updated_user_id = await _update_user(
-            updated_user_params=updated_user_params, session=db, user_id=user_id
+        updated_user = await user_service.update_user_me(
+            updated_param=body, current_user=current_user
         )
     except IntegrityError as err:
-        raise HTTPException(status_code=503, detail=f"Database error: {err}")
-    return UpdatedUserResponse(updated_user_id=updated_user_id)
-
-
-@user_router.delete(
-    "/admin_privilege",
-    response_model=UpdatedUserResponse,
-    dependencies=[Depends(get_current_active_superadmin)],
-)
-async def revoke_admin_privilege(
-    user_id: UUID,
-    db: SessionDep,
-    current_user: UserAuthDep,
-):
-    if current_user.user_id == user_id:
         raise HTTPException(
-            status_code=400, detail="Cannot manage privileges of itself."
-        )
-    user_for_revoke_admin_privileges = await _get_user_by_id(user_id, db)
-    if not user_for_revoke_admin_privileges.is_admin:
-        raise HTTPException(
-            status_code=409, detail=f"User with id {user_id} has no admin privileges."
-        )
-    if user_for_revoke_admin_privileges is None:
-        raise HTTPException(
-            status_code=404, detail=f"User with id {user_id} not found."
-        )
-    updated_user_params = {
-        "roles": user_for_revoke_admin_privileges.remove_admin_privilege()
-    }
-    try:
-        updated_user_id = await _update_user(
-            updated_user_params=updated_user_params, session=db, user_id=user_id
-        )
-    except IntegrityError as err:
-        raise HTTPException(status_code=503, detail=f"Database error: {err}")
-    return UpdatedUserResponse(updated_user_id=updated_user_id)
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database error: {err}",
+        ) from err
 
-
-@user_router.get("/", response_model=ShowUser)
-async def get_user_by_id(
-    user_id: UUID, session: SessionDep, current_user: UserAuthDep
-) -> ShowUser:
-    user = await _get_user_by_id(user_id, session)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        )
-    return ShowUser(
-        user_id=user.user_id,
-        name=user.name,
-        surname=user.surname,
-        email=user.email,
-        is_active=user.is_active,
-    )
-
-
-@user_router.patch("/", response_model=UpdatedUserResponse)
-async def update_user_by_id(
-    user_id: UUID,
-    body: UpdateUserRequest,
-    session: SessionDep,
-    current_user: UserAuthDep,
-) -> Any:
-    updated_user_params = body.dict(exclude_none=True)
-    if updated_user_params == {}:
-        raise HTTPException(
-            status_code=422,
-            detail="At least one parameter for user update info should be provided",
-        )
-    user_for_update = await _get_user_by_id(user_id, session)
-    if user_for_update is None:
-        raise HTTPException(
-            status_code=404, detail=f"User with id {user_id} not found."
-        )
-    if not check_user_permissions(
-        target_user=user_for_update,
-        current_user=current_user,
-        action=RequestAction.UPDATE,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied"
-        )
-
-    try:
-        updated_user_id = await _update_user(
-            updated_user_params=updated_user_params, session=session, user_id=user_id
-        )
-    except IntegrityError as err:
-        # logger.error(err)
-        raise HTTPException(status_code=503, detail=f"Database error: {err}") from err
-
-    return UpdatedUserResponse(updated_user_id=updated_user_id)
+    return create_response(data=updated_user)

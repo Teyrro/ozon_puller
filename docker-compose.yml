@@ -1,0 +1,90 @@
+
+
+services:
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+      - ./init_multiple_databases.sh:/docker-entrypoint-initdb.d/init_multiple_databases.sh
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
+      - POSTGRES_USER=${DATABASE_USER?Variable not set}
+      - POSTGRES_DB=${DATABASE_NAME?Variable not set}
+    expose:
+      - "${DATABASE_PORT}"
+  backend:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    links:
+      - "db:database"
+    depends_on:
+      - db
+    expose:
+      - ${PORT}
+    env_file:
+      - .env
+    environment:
+#      - PORT=${PORT}
+#      - DOMAIN=${DOMAIN}
+#      - ENVIRONMENT=${ENVIRONMENT}
+#      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+#      - SECRET_KEY=${SECRET_KEY?Variable not set}
+#      - FIRST_SUPERUSER=${FIRST_SUPERUSER_EMAIL?Variable not set}
+#      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+#      - SENTRY_DSN=${SENTRY_DSN}
+      - POSTGRES_SERVER={DATABASE_HOST}
+      - POSTGRES_PORT=${DATABASE_PORT}
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER?Variable not set}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
+
+    ports:
+      - ${PORT}:${PORT}
+    build:
+      context: .
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-false}
+
+  redis_server:
+    image: redis:alpine
+    container_name: redis_server
+    restart: always
+    expose:
+      - 6379
+    env_file: .env
+
+  celery_worker:
+    container_name: celery_worker
+    restart: always
+    # platform: linux/arm64/v8
+    build: .
+    command: "watchfiles 'celery -A app.core.celery worker -l info' "
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis_server
+    env_file: .env
+
+  celery_beat: #Good for crontab and schedule tasks
+    container_name: celery_beat
+    restart: always
+    # platform: linux/arm64/v8
+    build:
+      context: .
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-false}
+    command: celery -A app.core.celery beat -l info -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis_server
+    env_file: .env
+volumes:
+  app-db-data:
+
