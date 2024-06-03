@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
+FROM tiangolo/uvicorn-gunicorn:python3.10-slim
 ENV PYTHONUNBUFFERED=1
 ENV PIP_DEFAULT_TIMEOUT=100
 WORKDIR /app
@@ -18,14 +18,15 @@ RUN bash -c "if [ $INSTALL_DEV == 'true' ] ; then poetry install --no-root ; els
 
 ENV PYTHONPATH=/app
 
-COPY ./scripts /app/scripts
+COPY ./compose/backend/scripts /app/scripts
 
-COPY ./alembic.ini /app/
+COPY alembic.ini /app/
 
-COPY ./prestart.sh /app/
+COPY ./compose/backend/prestart.sh /app
 
-COPY tests-start.sh /app/
+COPY ./compose/backend/tests-start.sh /app/
 
-COPY ./app /app/app
+COPY app /app/app
+
 
 EXPOSE $PORT

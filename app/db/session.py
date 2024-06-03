@@ -31,7 +31,7 @@ SessionLocal = async_sessionmaker(
 
 engine_celery = create_async_engine(
     str(settings.ASYNC_CELERY_BEAT_DATABASE_URI),
-    echo=False,
+    echo=True,
     poolclass=NullPool
     if settings.MODE == ModeEnum.testing
     else AsyncAdaptedQueuePool,  # Asyncio pytest works with NullPool

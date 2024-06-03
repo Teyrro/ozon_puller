@@ -114,6 +114,7 @@ async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserR
     response_model=IGetResponsePaginated[IUserRead]
 )
 async def read_users_list_by_role_name(
+        role_name: str,
         name: str = "",
         user_status: Annotated[
             IUserStatus,
@@ -122,7 +123,6 @@ async def read_users_list_by_role_name(
                 description="User status, It is optional. Default is active",
             ),
         ] = IUserStatus.active,
-        role_name: str = "",
         params: Params = Depends(),
 ) -> Any:
     """

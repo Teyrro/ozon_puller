@@ -96,4 +96,4 @@ class UserService:
             )
             .order_by(User.name)
         )
-        await self.crud.get_multi_paginated(query=query, params=params)
+        return await self.crud.get_multi_paginated(query=query, params=params)

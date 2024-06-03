@@ -7,7 +7,6 @@ from sqlalchemy import AsyncAdaptedQueuePool, NullPool
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import main_api_router
-from app.core.celery import celery
 from app.core.config import ModeEnum, settings
 
 
@@ -43,5 +42,5 @@ app.include_router(main_api_router)
 add_pagination(app)
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.DOMAIN, port=settings.PORT)
-    beat = celery.Beat(loglevel="debug")
-    beat.start_scheduler()
+    # beat = celery.Beat(loglevel="debug")
+    # beat.start_scheduler()

@@ -1,4 +1,3 @@
-
 from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -26,11 +25,9 @@ class CRUDOzonReport(CRUDBase[OzonReport, IOzonReportCreate, IOzonReportUpdate])
         session.add(report)
         await session.commit()
 
-
-
     async def get_last_by_report_type(self, *, type: ReportType, db_session: AsyncSession | None = None):
         stmt = (select(OzonReport).where(OzonReport.report_type == type).limit(1))
-        session = db_session or self.db
+        session = db_session or self.db.session
         metrics = await session.execute(stmt)
         return metrics.scalar_one_or_none()
 

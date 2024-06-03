@@ -129,7 +129,7 @@ class OzonRequestService:
                      "Прогноз оборачиваемости FBO, дн", "Возвраты за 14 дн", "Динамика заказов"]
         stock: DataFrame = df.select(pl.selectors.by_index(0, 17, 20))
         stock = stock.select(
-            pl.lit(pl.arange(1, stock.shape[0] + 1)).alias(col_names[0]),
+            pl.lit(pl.arange(1, stock.shape[0] + 1, eager=True)).alias(col_names[0]),
             pl.all()
         )
         for col in col_names[1:]:
