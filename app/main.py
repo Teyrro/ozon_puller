@@ -7,7 +7,6 @@ from sqlalchemy import AsyncAdaptedQueuePool, NullPool
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import main_api_router
-from app.core.celery import celery
 from app.core.config import ModeEnum, settings
 
 
