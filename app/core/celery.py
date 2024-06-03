@@ -15,7 +15,7 @@ beat_dburi = str(settings.SYNC_CELERY_BEAT_DATABASE_URI)
 
 timezone = 'UTC'
 
-worker_max_tasks_per_child = 10
+worker_max_tasks_per_child = 5
 
 config = {
     # 'beat_scheduler': beat_scheduler,  # The command line parameters are configured, so there is no need to write

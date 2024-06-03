@@ -39,6 +39,7 @@ fastapi-async-sqlalchemy = "^0.6.1"
 celery = {extras = ["redis"], version = "^5.4.0"}
 redis = "^5.0.4"
 sqlalchemy-celery-beat = "^0.7.1"
+pyjwt = "^2.8.0"
 
 
 
