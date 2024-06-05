@@ -3,14 +3,14 @@ volumes:
 
 services:
   db:
-    build: ./compose/multiple_databases_image
+    build: backend/compose/multiple_databases_image
     restart: always
-#    volumes:
-#      - app-db-data:/var/lib/postgresql/data/pgdata
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
     env_file:
       - .env
     environment:
-#      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
       - POSTGRES_USER=${DATABASE_USER?Variable not set}
       - POSTGRES_DB=${DATABASE_NAME?Variable not set}
@@ -19,9 +19,18 @@ services:
     expose:
       - "${DATABASE_PORT}"
 
+  redis_server:
+    image: redis:alpine
+    container_name: redis_server
+    restart: always
+    expose:
+      - 6379
+    env_file: .env
+
   backend:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
+    command: gunicorn -w 1 -k uvicorn.workers.UvicornWorker app.main:app  --bind 0.0.0.0:7330 --preload --log-level=debug --timeout 120
     links:
       - "db:database"
     depends_on:
@@ -34,32 +43,24 @@ services:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USER?Variable not set}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
-    ports:
-      - ${PORT}
     expose:
       - ${PORT}
     build:
       context: .
-      dockerfile: ./compose/backend/Dockerfile
+      dockerfile: backend/compose/backend/Dockerfile
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
-
-  redis_server:
-    image: redis:alpine
-    container_name: redis_server
-    restart: always
-    expose:
-      - 6379
-    env_file: .env
 
   celery_worker:
     container_name: celery_worker
     restart: always
     # platform: linux/arm64/v8
-    build: .
+    build:
+      context: .
+      dockerfile: backend/compose/backend/Dockerfile
     command: "watchfiles 'celery -A app.core.celery worker -l info' "
-    volumes:
-      - .:/app
+#    volumes:
+#      - .:/app
     depends_on:
       - db
       - redis_server
@@ -70,12 +71,13 @@ services:
     restart: always
     # platform: linux/arm64/v8
     build:
-      context: .
+      context: backend/compose/backend
+#      dockerfile: ./compose/backend/Dockerfile
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
-    command: celery -A app.core.celery beat -l info -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
-    volumes:
-      - .:/app
+    command: celery -A app.core.celery beat -l info -S sqlalchemy
+#    volumes:
+#      - .:/app
     depends_on:
       - db
       - redis_server

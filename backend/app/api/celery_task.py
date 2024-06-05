@@ -1,9 +1,8 @@
 import asyncio
-import logging
 
 from celery.schedules import crontab
 
-from app.api.routes.servises.ozon_request import OzonRequestService
+from app.api.routes.servises.users import OzonRequestService
 from app.core.celery import celery
 
 
@@ -25,13 +24,13 @@ def generate_metrics():
     asyncio.get_event_loop().run_until_complete(or_service.generate_metrics())
 
 
-@celery.task(
-    name='task.print_hello'
-)
-def print_hello():
-    logging.info("Hello World!")
-
-
+# @celery.task(
+#     name='task.print_hello'
+# )
+# def print_hello():
+#     logging.info("Hello World!")
+#
+#
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(
@@ -46,3 +45,5 @@ def setup_periodic_tasks(sender, **kwargs):
         generate_metrics.s(),
         name="every day at 2:20 AM, generate metrics"
     )
+    # sender.add_periodic_task(1.0, print_hello.s(), name="every 1 sec")
+#     sender.add_periodic_task(1.0, print_hello.s(), name="every 1 sec")

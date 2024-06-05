@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
 from app.tests.utils.user import create_random_user, get_role_id
-from app.tests.utils.utils import random_email, random_lower_string
+from backend.app.tests.utils.utils import random_email, random_lower_string
 
 
 async def test_create_user(client, async_session_test: AsyncSession, superuser_token_headers):

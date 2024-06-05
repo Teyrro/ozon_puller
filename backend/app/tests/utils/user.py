@@ -9,7 +9,7 @@ from app import crud
 from app.db.session import SessionLocal
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
-from app.tests.utils.utils import random_email, random_lower_string
+from backend.app.tests.utils.utils import random_email, random_lower_string
 
 
 async def user_authentication_headers(

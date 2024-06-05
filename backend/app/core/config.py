@@ -16,7 +16,7 @@ from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
-load_dotenv()
+# load_dotenv()
 
 
 class ModeEnum(str, Enum):
@@ -35,7 +35,9 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_ignore_empty=True, extra="ignore"
+        env_file=".env",
+        env_ignore_empty=True,
+        extra="ignore"
     )
 
     # JWT
