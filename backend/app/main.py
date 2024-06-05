@@ -14,7 +14,10 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
-app = FastAPI(title="OzonPuller", generate_unique_id_function=custom_generate_unique_id)
+app = FastAPI(
+    title="OzonPuller",
+    openapi_url=settings.API_V1_STR,
+    generate_unique_id_function=custom_generate_unique_id)
 
 app.add_middleware(
     SQLAlchemyMiddleware,
@@ -38,7 +41,7 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-app.include_router(main_api_router)
+app.include_router(main_api_router, prefix=settings.API_V1_STR)
 add_pagination(app)
-if __name__ == "__main__":
-    uvicorn.run(app, host=settings.DOMAIN, port=settings.PORT)
+# if __name__ == "__main__":
+    # uvicorn.run(app, host=settings.DOMAIN, port=settings.PORT)

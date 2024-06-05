@@ -10,11 +10,13 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
 from app import crud
+from app.core.config import settings
 from app.core.security import decode_token
 from app.db.session import SessionLocal, SessionLocalCelery
 from app.models.user_models import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/access-token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR }/login/access-token")
 
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
