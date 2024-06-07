@@ -22,7 +22,7 @@ from typing_extensions import Self
 class ModeEnum(str, Enum):
     development = "development"
     production = "production"
-    testing = "testing"
+    testing = "staging"
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     DOMAIN: str = "localhost"
     PORT: int
     MODE: ModeEnum = ModeEnum.testing
-    ENVIRONMENT: Literal["local", "staging", "production"] = "local"
+    ENVIRONMENT: ModeEnum = ModeEnum.development
     API_V1_STR: str = "/api/v1"
     SENTRY_DSN: HttpUrl | None = None
 
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     @property
     def server_host(self) -> str:
         # Use HTTPS for anything other than local development
-        if self.ENVIRONMENT == "local":
+        if self.ENVIRONMENT == ModeEnum.development:
             return f"http://{self.DOMAIN}"
         return f"https://{self.DOMAIN}"
 
@@ -160,7 +160,7 @@ class Settings(BaseSettings):
                 f'The value of {var_name} is "changethis", '
                 "for security, please change it, at least for deployments."
             )
-            if self.ENVIRONMENT == "local":
+            if self.ENVIRONMENT == ModeEnum.development:
                 warnings.warn(message, stacklevel=1)
             else:
                 raise ValueError(message)

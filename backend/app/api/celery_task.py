@@ -2,7 +2,8 @@ import asyncio
 
 from celery.schedules import crontab
 
-from app.api.routes.servises.users import OzonRequestService
+from app.api.routes.servises.ozon_request import OzonRequestService
+
 from app.core.celery import celery
 
 
