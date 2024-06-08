@@ -1,4 +1,4 @@
-
+import celery_typed_tasks
 from celery import Celery
 from sqlalchemy import update
 from sqlalchemy_celery_beat import PeriodicTask, PeriodicTaskChanged, SessionManager
@@ -7,17 +7,17 @@ from sqlalchemy_celery_beat.session import session_cleanup
 from app.core.config import settings
 
 
-def clean_tasks(task_names: list[str]):
-    session_manager = SessionManager()
-    session = session_manager.session_factory(str(settings.SYNC_CELERY_BEAT_DATABASE_URI))
-    for name in task_names:
-        with session_cleanup(session):
-            stmp = update(PeriodicTask).where(PeriodicTask.name == name).values(enabled=False)
-
-            session.execute(stmp)
-            session.commit()
-
-            PeriodicTaskChanged.update_from_session(session)
+# def clean_tasks(task_names: list[str]):
+#     session_manager = SessionManager()
+#     session = session_manager.session_factory(str(settings.SYNC_CELERY_BEAT_DATABASE_URI))
+#     for name in task_names:
+#         with session_cleanup(session):
+#             stmp = update(PeriodicTask).where(PeriodicTask.name == name).values(enabled=False)
+#
+#             session.execute(stmp)
+#             session.commit()
+#
+#             PeriodicTaskChanged.update_from_session(session)
 
 
 celery = Celery(
@@ -25,8 +25,8 @@ celery = Celery(
     broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
     backend=str(settings.SYNC_CELERY_DATABASE_URI),
     include="app.api.celery_task",  # route where tasks are defined
+    task_cls=celery_typed_tasks.TypedTask
 )
-
 # beat_schedule = {
 #     'print-every-sec': {
 #         'task': 'tasks.print_hello',
@@ -64,4 +64,4 @@ config = {
 
 celery.conf.update(config)
 celery.autodiscover_tasks()
-# celery.start()
+

@@ -17,8 +17,8 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
       - POSTGRES_USER=${DATABASE_USER?Variable not set}
       - POSTGRES_DB=${DATABASE_NAME?Variable not set}
-#    ports:
-#      - ${DATABASE_PORT}:5432
+    ports:
+      - ${DATABASE_PORT}:5432
     expose:
       - ${DATABASE_PORT}
 
@@ -41,6 +41,8 @@ services:
     restart: always
     links:
       - db:database
+    ports:
+      - ${PORT}:${PORT}
     depends_on:
       - db
     env_file:
@@ -112,6 +114,7 @@ services:
         INSTALL_DEV: ${INSTALL_DEV-false}
     command: celery -A app.core.celery beat -l info -S sqlalchemy
     depends_on:
+      - celery_worker
       - db
       - redis_server
     env_file: .env
