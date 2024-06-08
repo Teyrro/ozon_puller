@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator, Callable, Coroutine
+from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
@@ -16,11 +17,12 @@ from app.db.session import SessionLocal, SessionLocalCelery
 from app.models.user_models import User
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR }/login/access-token")
+    tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 
+@asynccontextmanager
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
         yield session

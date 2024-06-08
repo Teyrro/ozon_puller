@@ -50,13 +50,13 @@ services:
 #    ports:
 #      - "8080:8080"
 
-  backend:
-    restart: "no"
-#    volumes:
-#      - ./backend/:/app/app
-    build:
-      args:
-        INSTALL_DEV: ${INSTALL_DEV-true}
+#  backend:
+#    restart: "no"
+##    volumes:
+##      - ./backend/:/app/app
+#    build:
+#      args:
+#        INSTALL_DEV: ${INSTALL_DEV-true}
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
 #    command: /start-reload.sh
 
