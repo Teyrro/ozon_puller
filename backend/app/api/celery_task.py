@@ -37,12 +37,12 @@ def generate_metrics():
 def setup_periodic_tasks(sender, **kwargs):
     # sender.add_periodic_task(1, print_hello.s(), name='task.print_hello')
     sender.add_periodic_task(crontab(
-        minute="*/1"),
+        hour="2"),
         download_seller_reports.s(),
         name="every day at 2:00 AM, download product report"
     )
     sender.add_periodic_task(crontab(
-        hour="3", minute="5"),
+        hour="2", minute="20"),
         generate_metrics.s(),
         name="every day at 2:20 AM, generate metrics"
     )
