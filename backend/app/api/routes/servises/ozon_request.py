@@ -338,7 +338,7 @@ class OzonRequestService:
 
     async def _fill_data_metrics(self, session, date_from, date_to, delta: timedelta = None):
         if delta is None:
-            delta = 14
+            delta = timedelta(14)
 
         o_report = await self.or_crud.get_last_item_by_created_at(db_session=session)
         df = pl.read_csv(BytesIO(o_report.report), separator=";")
@@ -373,7 +373,7 @@ class OzonRequestService:
         )
         ho = (ho.join(delta_by_days, left_on=ho.columns[0], right_on=delta_by_days.columns[0], how='inner'))
         names_dfs = list(zip(self.sheets, [hb, metrics, ho, stock], strict=False))
-        await self.save_dataframes(session, names_dfs, True, True)
+        await self.save_dataframes(session, names_dfs, False, True)
 
     async def generate_metrics(self, date_from: datetime = None,
                                date_to: datetime = None,

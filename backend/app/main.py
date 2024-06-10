@@ -43,5 +43,3 @@ if settings.BACKEND_CORS_ORIGINS:
 
 app.include_router(main_api_router, prefix=settings.API_V1_STR)
 add_pagination(app)
-# if __name__ == "__main__":
-    # uvicorn.run(app, host=settings.DOMAIN, port=settings.PORT)
