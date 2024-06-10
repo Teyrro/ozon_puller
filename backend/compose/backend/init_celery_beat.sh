@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 
+
 celery -A app.core.celery purge
-#celery -A app.core.celery beat -S sqlalchemy -l info
+sleep 3
+echo "y"
+celery -A app.core.celery beat -S sqlalchemy -l info
