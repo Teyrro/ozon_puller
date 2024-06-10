@@ -13,7 +13,7 @@ from app.schemas.user_schema import IUserCreate, IUserUpdate
 
 class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
     async def get_by_email(
-            self, *, email: str, db_session: AsyncSession | None = None
+        self, *, email: str, db_session: AsyncSession | None = None
     ) -> User | None:
         db_session = db_session or self.db.session
         users = await db_session.execute(select(User).where(User.email == email))
@@ -28,7 +28,7 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         return user
 
     async def create_with_role(
-            self, *, obj_in: IUserCreate, db_session: AsyncSession | None = None
+        self, *, obj_in: IUserCreate, db_session: AsyncSession | None = None
     ) -> User:
         db_session = db_session or self.db.session
         db_obj = User.model_validate(obj_in)
@@ -47,7 +47,7 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         return user
 
     async def remove(
-            self, *, id: UUID | str, db_session: AsyncSession | None = None
+        self, *, id: UUID | str, db_session: AsyncSession | None = None
     ) -> User:
         db_session = db_session or self.db.session
         response = await db_session.execute(
@@ -60,10 +60,11 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
 
     async def get_admin_id(self, db_session: AsyncSession | None = None) -> UUID:
         db_session = db_session or self.db.session
-        response = await db_session.execute(select(User, Role)
-                                            .where(and_(User.role_id == Role.id,
-                                                        Role.name == IRoleEnum.admin))
-                                            .limit(1))
+        response = await db_session.execute(
+            select(User, Role)
+            .where(and_(User.role_id == Role.id, Role.name == IRoleEnum.admin))
+            .limit(1)
+        )
         obj = response.scalar_one_or_none()
         if obj is not None:
             return obj.id

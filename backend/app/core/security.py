@@ -14,7 +14,7 @@ fernet = fernet.Fernet(settings.SECRET_KEY.encode())
 
 
 def create_access_token(
-        subject: EmailStr | Any, expires_delta: timedelta = None
+    subject: EmailStr | Any, expires_delta: timedelta = None
 ) -> str:
     if expires_delta:
         expire = datetime.utcnow() + expires_delta

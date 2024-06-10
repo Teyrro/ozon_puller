@@ -26,10 +26,10 @@ role_router = APIRouter()
 @role_router.get(
     "",
     response_model=IGetResponsePaginated[IRoleRead],
-    dependencies=[Depends(deps.get_current_user())]
+    dependencies=[Depends(deps.get_current_user())],
 )
 async def get_roles(
-        params: Params = Depends(),
+    params: Params = Depends(),
 ) -> Any:
     """
     Gets a paginated list of roles
@@ -41,10 +41,10 @@ async def get_roles(
 @role_router.get(
     "/{role_id}",
     dependencies=[Depends(deps.get_current_user())],
-    response_model=IGetResponseBase[IRoleRead]
+    response_model=IGetResponseBase[IRoleRead],
 )
 async def get_role_by_id(
-        role: Role = Depends(role_deps.get_user_role_by_id),
+    role: Role = Depends(role_deps.get_user_role_by_id),
 ) -> Any:
     """
     Gets a role by its id
@@ -56,12 +56,10 @@ async def get_role_by_id(
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=IPostResponseBase[IRoleRead],
-    dependencies=[Depends(
-        deps.get_current_user([IRoleEnum.admin])
-    )],
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
 )
 async def create_role(
-        role: IRoleCreate,
+    role: IRoleCreate,
 ) -> Any:
     """
     Create a new role
@@ -80,15 +78,12 @@ async def create_role(
 @role_router.put(
     "/{role_id}",
     response_model=IPutResponseBase[IRoleRead],
-    dependencies=[Depends(
-        deps.get_current_user([IRoleEnum.admin])
-    )],
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
 )
 async def update_role(
-        role: IRoleUpdate,
-        current_role: Role = Depends(role_deps.get_user_role_by_id),
+    role: IRoleUpdate,
+    current_role: Role = Depends(role_deps.get_user_role_by_id),
 ) -> Any:
-
     """
     Updates a role by its id
 

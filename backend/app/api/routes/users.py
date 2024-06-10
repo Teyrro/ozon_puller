@@ -38,11 +38,13 @@ user_router = APIRouter()
 add_pagination(user_router)
 
 
-@user_router.post("/",
-                  status_code=status.HTTP_201_CREATED,
-                  dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))])
+@user_router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+)
 async def create_user(
-        user_in: IUserCreate,
+    user_in: IUserCreate,
 ) -> IPostResponseBase[IUserRead]:
     """
     Create User
@@ -64,9 +66,7 @@ async def create_user(
         ) from err
 
 
-@user_router.get(
-    "/me"
-)
+@user_router.get("/me")
 async def read_user_me(current_user: UserAuthDep) -> IGetResponseBase[IUserRead]:
     """
     Get current user.
@@ -78,9 +78,7 @@ async def read_user_me(current_user: UserAuthDep) -> IGetResponseBase[IUserRead]
     "/{user_id}",
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
 )
-async def read_user_by_id(
-        user_id: UUID
-) -> IGetResponseBase[IUserRead]:
+async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserRead]:
     """
     Get user by id
 
@@ -93,8 +91,7 @@ async def read_user_by_id(
 
 
 @user_router.get(
-    "/list/",
-    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))]
+    "/list/", dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))]
 )
 async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserRead]:
     """
@@ -109,21 +106,20 @@ async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserR
 
 @user_router.get(
     "/list/by_role_name",
-    dependencies=[Depends(
-        deps.get_current_user([IRoleEnum.admin]))],
-    response_model=IGetResponsePaginated[IUserRead]
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+    response_model=IGetResponsePaginated[IUserRead],
 )
 async def read_users_list_by_role_name(
-        role_name: str,
-        name: str = "",
-        user_status: Annotated[
-            IUserStatus,
-            Query(
-                title="User status",
-                description="User status, It is optional. Default is active",
-            ),
-        ] = IUserStatus.active,
-        params: Params = Depends(),
+    role_name: str,
+    name: str = "",
+    user_status: Annotated[
+        IUserStatus,
+        Query(
+            title="User status",
+            description="User status, It is optional. Default is active",
+        ),
+    ] = IUserStatus.active,
+    params: Params = Depends(),
 ) -> Any:
     """
     Retrieve users by role name and status. Requires admin role
@@ -133,27 +129,20 @@ async def read_users_list_by_role_name(
     """
     user_service = UserService(crud.user)
     try:
-        users = await user_service.read_users_by_role_name(user_status,
-                                                           role_name,
-                                                           name,
-                                                           params)
+        users = await user_service.read_users_by_role_name(
+            user_status, role_name, name, params
+        )
         return create_response(data=users)
     except IntegrityError as err:
         print(err)
 
 
-
 @user_router.get(
     "/order_by_created_at/",
-    dependencies=[
-        Depends(
-            deps.get_current_user(
-                [IRoleEnum.admin,
-                 IRoleEnum.manager]))
-    ]
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin, IRoleEnum.manager]))],
 )
 async def get_user_list_order_by_created_at(
-        params: Params = Depends(),
+    params: Params = Depends(),
 ) -> IGetResponsePaginated[IUserRead]:
     """
     Gets a paginated list of users ordered by created datetime
@@ -170,10 +159,10 @@ async def get_user_list_order_by_created_at(
 
 @user_router.delete("/{user_id}")
 async def delete_user(
-        user_id: UUID = Depends(user_deps.is_valid_user_id),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin])
-        ),
+    user_id: UUID = Depends(user_deps.is_valid_user_id),
+    current_user: User = Depends(
+        deps.get_current_user(required_roles=[IRoleEnum.admin])
+    ),
 ) -> IDeleteResponseBase[IUserRead]:
     """
     Delete user
@@ -189,10 +178,9 @@ async def delete_user(
     return create_response(data=deleted_user)
 
 
-@user_router.patch(
-    "/me/password")
+@user_router.patch("/me/password")
 async def update_password_me(
-        *, body: IUserUpdatePassword, current_user: UserAuthDep
+    *, body: IUserUpdatePassword, current_user: UserAuthDep
 ) -> MessageResponse:
     """
     Update own password.
@@ -202,12 +190,10 @@ async def update_password_me(
     return MessageResponse(message="Password updated successfully")
 
 
-@user_router.patch(
-    "/me"
-)
+@user_router.patch("/me")
 async def update_user_me(
-        body: IUserUpdateMe,
-        current_user: UserAuthDep,
+    body: IUserUpdateMe,
+    current_user: UserAuthDep,
 ) -> IPutResponseBase[IUserRead]:
     user_service = UserService(crud.user)
     try:

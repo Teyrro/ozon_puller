@@ -1,9 +1,6 @@
-from datetime import timedelta
-
 from fastapi import APIRouter
 
-from app.api.celery_task import generate_metrics, download_seller_reports
-from app.api.routes.servises.ozon_request import OzonRequestService
+from app.api.celery_task import download_seller_reports, generate_metrics
 
 ozon_request_router = APIRouter()
 

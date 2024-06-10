@@ -1,4 +1,3 @@
-import uvicorn
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
@@ -17,7 +16,8 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 app = FastAPI(
     title="OzonPuller",
     openapi_url=settings.API_V1_STR,
-    generate_unique_id_function=custom_generate_unique_id)
+    generate_unique_id_function=custom_generate_unique_id,
+)
 
 app.add_middleware(
     SQLAlchemyMiddleware,
@@ -26,7 +26,7 @@ app.add_middleware(
         "echo": False,
         "poolclass": NullPool
         if settings.MODE == ModeEnum.testing
-        else AsyncAdaptedQueuePool
+        else AsyncAdaptedQueuePool,
     },
 )
 

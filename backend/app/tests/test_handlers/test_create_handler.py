@@ -1,13 +1,15 @@
 import pytest
+from backend.app.tests.utils.utils import random_email, random_lower_string
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
 from app.tests.utils.user import create_random_user, get_role_id
-from backend.app.tests.utils.utils import random_email, random_lower_string
 
 
-async def test_create_user(client, async_session_test: AsyncSession, superuser_token_headers):
+async def test_create_user(
+    client, async_session_test: AsyncSession, superuser_token_headers
+):
     user_in = IUserCreate(
         name="Alex",
         surname="Marser",
@@ -16,9 +18,9 @@ async def test_create_user(client, async_session_test: AsyncSession, superuser_t
         password=random_lower_string(),
         role_id=await get_role_id(role=IRoleEnum.admin, db=async_session_test),
     )
-    resp = await client.post("/user/",
-                             content=user_in.model_dump_json(),
-                             headers=superuser_token_headers)
+    resp = await client.post(
+        "/user/", content=user_in.model_dump_json(), headers=superuser_token_headers
+    )
     data_from_resp = resp.json()
     data_from_resp = data_from_resp["data"]
     assert resp.status_code == 201
@@ -28,7 +30,9 @@ async def test_create_user(client, async_session_test: AsyncSession, superuser_t
     assert data_from_resp["is_active"] is True
 
 
-async def test_create_user_duplicate_email_error(client, async_session_test: AsyncSession, superuser_token_headers):
+async def test_create_user_duplicate_email_error(
+    client, async_session_test: AsyncSession, superuser_token_headers
+):
     user = await create_random_user(db=async_session_test)
     user_in = IUserCreate(
         name="Michel",
@@ -37,9 +41,9 @@ async def test_create_user_duplicate_email_error(client, async_session_test: Asy
         password=random_lower_string(),
         role_id=await get_role_id(role=IRoleEnum.user, db=async_session_test),
     )
-    resp = await client.post("/user/",
-                             content=user_in.model_dump_json(),
-                             headers=superuser_token_headers)
+    resp = await client.post(
+        "/user/", content=user_in.model_dump_json(), headers=superuser_token_headers
+    )
     assert resp.status_code == 503
     assert "Database error" in resp.json()["detail"]
 
@@ -48,132 +52,136 @@ async def test_create_user_duplicate_email_error(client, async_session_test: Asy
     "user_data_for_creation, expected_status_code, expected_detail",
     [
         (
-                {},
-                422,
-                {
-                    "detail": [
-                        {
-                            "input": {},
-                            "loc": ["body", "name"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                        {
-                            "input": {},
-                            "loc": ["body", "surname"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                        {
-                            "input": {},
-                            "loc": ["body", "email"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                        {
-                            "input": {},
-                            "loc": ["body", "password"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                    ]
-                },
+            {},
+            422,
+            {
+                "detail": [
+                    {
+                        "input": {},
+                        "loc": ["body", "name"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                    {
+                        "input": {},
+                        "loc": ["body", "surname"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                    {
+                        "input": {},
+                        "loc": ["body", "email"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                    {
+                        "input": {},
+                        "loc": ["body", "password"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                ]
+            },
         ),
         (
-                {"name": 123, "surname": "Sviridov", "email": "lol@kek.com"},
-                422,
-                {
-                    "detail": [
-                        {
-                            "input": 123,
-                            "loc": ["body", "name"],
-                            "msg": "Input should be a valid string",
-                            "type": "string_type",
+            {"name": 123, "surname": "Sviridov", "email": "lol@kek.com"},
+            422,
+            {
+                "detail": [
+                    {
+                        "input": 123,
+                        "loc": ["body", "name"],
+                        "msg": "Input should be a valid string",
+                        "type": "string_type",
+                    },
+                    {
+                        "input": {
+                            "email": "lol@kek.com",
+                            "name": 123,
+                            "surname": "Sviridov",
                         },
-                        {
-                            "input": {
-                                "email": "lol@kek.com",
-                                "name": 123,
-                                "surname": "Sviridov",
-                            },
-                            "loc": ["body", "password"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                    ]
-                },
+                        "loc": ["body", "password"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                ]
+            },
         ),
         (
-                {"name": "Nikolai", "surname": 456, "email": "lol@kek.com"},
-                422,
-                {
-                    "detail": [
-                        {
-                            "input": 456,
-                            "loc": ["body", "surname"],
-                            "msg": "Input should be a valid string",
-                            "type": "string_type",
+            {"name": "Nikolai", "surname": 456, "email": "lol@kek.com"},
+            422,
+            {
+                "detail": [
+                    {
+                        "input": 456,
+                        "loc": ["body", "surname"],
+                        "msg": "Input should be a valid string",
+                        "type": "string_type",
+                    },
+                    {
+                        "input": {
+                            "email": "lol@kek.com",
+                            "name": "Nikolai",
+                            "surname": 456,
                         },
-                        {
-                            "input": {
-                                "email": "lol@kek.com",
-                                "name": "Nikolai",
-                                "surname": 456,
-                            },
-                            "loc": ["body", "password"],
-                            "msg": "Field required",
-                            "type": "missing",
-                        },
-                    ]
-                },
+                        "loc": ["body", "password"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                ]
+            },
         ),
         (
-                {"name": "Nikolai", "surname": "Sviridov", "email": "lol"},
-                422,
-                {
-                    "detail": [
-                        {
-                            "ctx": {
-                                "reason": "The email address is not valid. It must have "
-                                          "exactly one @-sign."
-                            },
-                            "input": "lol",
-                            "loc": ["body", "email"],
-                            "msg": "value is not a valid email address: The email address is "
-                                   "not valid. It must have exactly one @-sign.",
-                            "type": "value_error",
+            {"name": "Nikolai", "surname": "Sviridov", "email": "lol"},
+            422,
+            {
+                "detail": [
+                    {
+                        "ctx": {
+                            "reason": "The email address is not valid. It must have "
+                            "exactly one @-sign."
                         },
-                        {
-                            "input": {
-                                "email": "lol",
-                                "name": "Nikolai",
-                                "surname": "Sviridov",
-                            },
-                            "loc": ["body", "password"],
-                            "msg": "Field required",
-                            "type": "missing",
+                        "input": "lol",
+                        "loc": ["body", "email"],
+                        "msg": "value is not a valid email address: The email address is "
+                        "not valid. It must have exactly one @-sign.",
+                        "type": "value_error",
+                    },
+                    {
+                        "input": {
+                            "email": "lol",
+                            "name": "Nikolai",
+                            "surname": "Sviridov",
                         },
-                    ]
-                },
+                        "loc": ["body", "password"],
+                        "msg": "Field required",
+                        "type": "missing",
+                    },
+                ]
+            },
         ),
         (
-                {"name": "Nikolai12", "surname": "Sviridov", "email": "lol@kek.com"},
-                422,
-                {"detail": "Name should contains only letters"},
+            {"name": "Nikolai12", "surname": "Sviridov", "email": "lol@kek.com"},
+            422,
+            {"detail": "Name should contains only letters"},
         ),
         (
-                {"name": "Nikolai", "surname": "Sviridov12", "email": "lol@kek.com"},
-                422,
-                {"detail": "Surname should contains only letters"},
+            {"name": "Nikolai", "surname": "Sviridov12", "email": "lol@kek.com"},
+            422,
+            {"detail": "Surname should contains only letters"},
         ),
     ],
 )
 async def test_create_user_validation_error(
-        client, user_data_for_creation, expected_status_code, expected_detail
-        , superuser_token_headers):
-    resp = await client.post("/user/",
-                             json=user_data_for_creation,
-                             headers=superuser_token_headers)
+    client,
+    user_data_for_creation,
+    expected_status_code,
+    expected_detail,
+    superuser_token_headers,
+):
+    resp = await client.post(
+        "/user/", json=user_data_for_creation, headers=superuser_token_headers
+    )
     data_from_resp = resp.json()
     assert resp.status_code == expected_status_code
     assert data_from_resp == expected_detail

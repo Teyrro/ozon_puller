@@ -17,7 +17,8 @@ from app.db.session import SessionLocal, SessionLocalCelery
 from app.models.user_models import User
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token")
+    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
+)
 
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
@@ -34,10 +35,10 @@ async def get_jobs_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 def get_current_user(
-        required_roles: list[str] = None
+    required_roles: list[str] = None,
 ) -> Callable[[str], Coroutine[Any, Any, User]]:
     async def current_user(
-            access_token: TokenDep,
+        access_token: TokenDep,
     ) -> User:
         try:
             payload = decode_token(access_token)

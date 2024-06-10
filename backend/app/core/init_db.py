@@ -80,5 +80,7 @@ async def init_db(session: AsyncSession) -> None:
         )
         if not count_tuples:
             conf_data["data"].user_id = admin_user.id
-            conf_data["data"].api_key = security.get_data_encrypt(conf_data["data"].api_key)
+            conf_data["data"].api_key = security.get_data_encrypt(
+                conf_data["data"].api_key
+            )
             await crud.ozon_data.create(obj_in=conf_data["data"], db_session=session)

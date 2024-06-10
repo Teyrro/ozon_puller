@@ -1,8 +1,7 @@
 import warnings
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
-from dotenv import load_dotenv
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -35,9 +34,7 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_ignore_empty=True,
-        extra="ignore"
+        env_file=".env", env_ignore_empty=True, extra="ignore"
     )
 
     # JWT
@@ -45,7 +42,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     ALGORITHM: str
 
-    #Project
+    # Project
     PROJECT_NAME: str
     DOMAIN: str = "localhost"
     PORT: int
@@ -98,7 +95,7 @@ class Settings(BaseSettings):
 
     @field_validator("SYNC_CELERY_DATABASE_URI", mode="after")
     def assemble_celery_db_connection(
-            cls, v: str | None, info: FieldValidationInfo
+        cls, v: str | None, info: FieldValidationInfo
     ) -> Any:
         if isinstance(v, str):
             if v == "":
@@ -116,7 +113,7 @@ class Settings(BaseSettings):
 
     @field_validator("SYNC_CELERY_BEAT_DATABASE_URI", mode="after")
     def assemble_celery_beat_db_connection(
-            cls, v: str | None, info: FieldValidationInfo
+        cls, v: str | None, info: FieldValidationInfo
     ) -> Any:
         if isinstance(v, str):
             if v == "":
@@ -134,7 +131,7 @@ class Settings(BaseSettings):
 
     @field_validator("ASYNC_CELERY_BEAT_DATABASE_URI", mode="after")
     def assemble_async_celery_beat_db_connection(
-            cls, v: str | None, info: FieldValidationInfo
+        cls, v: str | None, info: FieldValidationInfo
     ) -> Any:
         if isinstance(v, str):
             if v == "":
@@ -172,8 +169,12 @@ class Settings(BaseSettings):
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )
-        self._check_default_secret("FIRST_SUPERUSER_CLIENT_ID", self.FIRST_SUPERUSER_CLIENT_ID)
-        self._check_default_secret("FIRST_SUPERUSER_API_KEY", self.FIRST_SUPERUSER_API_KEY)
+        self._check_default_secret(
+            "FIRST_SUPERUSER_CLIENT_ID", self.FIRST_SUPERUSER_CLIENT_ID
+        )
+        self._check_default_secret(
+            "FIRST_SUPERUSER_API_KEY", self.FIRST_SUPERUSER_API_KEY
+        )
         return self
 
 

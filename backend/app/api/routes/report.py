@@ -40,7 +40,7 @@ async def download_file(id) -> StreamingResponse:
 
 @report_router.post("/list")
 async def get_all_reports(
-        params: Params = Depends()
+    params: Params = Depends(),
 ) -> IGetResponsePaginated[IOzonReportRead]:
     reports = await crud.ozon_report.get_multi_paginated(params=params)
     return create_response(reports)

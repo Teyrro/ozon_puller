@@ -2,6 +2,7 @@ from collections.abc import Coroutine
 from typing import Any
 from uuid import UUID
 
+from backend.app.tests.utils.utils import random_email, random_lower_string
 from httpx import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -9,11 +10,10 @@ from app import crud
 from app.db.session import SessionLocal
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
-from backend.app.tests.utils.utils import random_email, random_lower_string
 
 
 async def user_authentication_headers(
-        *, client: AsyncClient, email: str, password: str
+    *, client: AsyncClient, email: str, password: str
 ) -> dict[str, str]:
     data = {"username": email, "password": password}
 
@@ -29,10 +29,12 @@ async def get_role_id(role: IRoleEnum, db: AsyncSession | None = None) -> UUID:
     return role.id
 
 
-async def create_random_user(db: AsyncSession,
-                             name: str | None = None,
-                             surname: str | None = None,
-                             role: IRoleEnum = IRoleEnum.user):
+async def create_random_user(
+    db: AsyncSession,
+    name: str | None = None,
+    surname: str | None = None,
+    role: IRoleEnum = IRoleEnum.user,
+):
     email = random_email()
     password = random_lower_string()
     role_id = await get_role_id(role=role, db=db)
@@ -53,7 +55,7 @@ async def create_random_user(db: AsyncSession,
 
 
 async def authentication_token_from_email(
-        *, client: AsyncClient, email: str, db: SessionLocal, role: IRoleEnum
+    *, client: AsyncClient, email: str, db: SessionLocal, role: IRoleEnum
 ) -> Coroutine[Any, Any, dict[str, str]]:
     """
     Return a valid token for the user with given email.

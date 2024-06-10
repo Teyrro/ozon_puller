@@ -5,16 +5,16 @@ from pydantic import BaseModel
 
 
 class ReportType(str, Enum):
-    all = "ALL",
-    seller_products = "SELLER_PRODUCTS",
-    seller_transactions = "SELLER_TRANSACTIONS",
-    seller_product_prices = "SELLER_PRODUCT_PRICES",
-    seller__stock = "SELLER_STOCK",
-    seller_returns = "SELLER_RETURNS",
-    seller_postings = "SELLER_POSTINGS",
-    seller_finance = "SELLER_FINANCE",
-    seller_product_discounted = "SELLER_PRODUCT_DISCOUNTED",
-    seller_metrics = "SELLER_METRICS",
+    all = ("ALL",)
+    seller_products = ("SELLER_PRODUCTS",)
+    seller_transactions = ("SELLER_TRANSACTIONS",)
+    seller_product_prices = ("SELLER_PRODUCT_PRICES",)
+    seller__stock = ("SELLER_STOCK",)
+    seller_returns = ("SELLER_RETURNS",)
+    seller_postings = ("SELLER_POSTINGS",)
+    seller_finance = ("SELLER_FINANCE",)
+    seller_product_discounted = ("SELLER_PRODUCT_DISCOUNTED",)
+    seller_metrics = ("SELLER_METRICS",)
 
 
 class OzonReportListReq(BaseModel):
@@ -24,7 +24,7 @@ class OzonReportListReq(BaseModel):
 
 
 class DimensionType(str, Enum):
-    unknownDimension = "unknownDimension",
+    unknownDimension = ("unknownDimension",)
     sku = "sku"
     spu = "spu"
     day = "day"

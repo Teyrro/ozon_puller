@@ -62,13 +62,11 @@ class OzonRequestService:
         self.u_crud: CRUDUser = crud.user
 
     async def _update_headers(self, user_id, session):
-
         """
         Set api-key and client_id in headers by user_id
         """
         ozon_data: OzonData = await self.od_crud.get_by_user_id(
-            id=user_id,
-            db_session=session
+            id=user_id, db_session=session
         )
         api_key = security.get_context(ozon_data.api_key)
         self.headers["Client-Id"] = ozon_data.client_id
@@ -78,10 +76,14 @@ class OzonRequestService:
         await self._update_headers(user_id, session)
         page = 1
         while True:
-            body = OzonReportListReq(page=page, page_size=1000, report_type=ReportType.all)
+            body = OzonReportListReq(
+                page=page, page_size=1000, report_type=ReportType.all
+            )
             async with aiohttp.ClientSession() as session:
                 response = await session.post(
-                    settings.OZON_URL + "/v1/report/list", headers=self.headers, data=body.json()
+                    settings.OZON_URL + "/v1/report/list",
+                    headers=self.headers,
+                    data=body.json(),
                 )
                 data = await response.json()
                 data = data["result"]
@@ -100,9 +102,15 @@ class OzonRequestService:
                     async with req_sema:
                         return await response.read()
 
-    async def _download_report(self, report: Report, last_date_report_in_db: OzonReport, req_sema: Semaphore):
-        if (last_date_report_in_db and report.created_at <= last_date_report_in_db.ozon_created_at or
-                report.file == "" or report.status != "success"):
+    async def _download_report(
+        self, report: Report, last_date_report_in_db: OzonReport, req_sema: Semaphore
+    ):
+        if (
+            last_date_report_in_db
+            and report.created_at <= last_date_report_in_db.ozon_created_at
+            or report.file == ""
+            or report.status != "success"
+        ):
             return None
         report.file = await self._download_file(str(report.file), req_sema)
         return report
@@ -113,11 +121,16 @@ class OzonRequestService:
             admin_id = await self.u_crud.get_admin_id(db_session=session)
 
             req_sema = asyncio.Semaphore(value=20)
-            last_report_date = await self.or_crud.get_last_item_by_created_at(db_session=session)
+            last_report_date = await self.or_crud.get_last_item_by_created_at(
+                db_session=session
+            )
             users = await self.u_crud.get_all_id(db_session=session)
 
             async for reports in self._get_reports(admin_id, session):
-                download_futures = [self._download_report(report, last_report_date, req_sema) for report in reports]
+                download_futures = [
+                    self._download_report(report, last_report_date, req_sema)
+                    for report in reports
+                ]
                 for future in asyncio.as_completed(download_futures):
                     report = await future
                     if (report and report.file) is not None:
@@ -135,31 +148,41 @@ class OzonRequestService:
 
     @staticmethod
     async def _fill_init_data_stock(df: DataFrame):
-        col_names = ["№", "Заказано за 14 дней", "Среднесуточный объем заказов, шт",
-                     "Прогноз оборачиваемости FBO, дн", "Возвраты за 14 дн", "Динамика заказов"]
+        col_names = [
+            "№",
+            "Заказано за 14 дней",
+            "Среднесуточный объем заказов, шт",
+            "Прогноз оборачиваемости FBO, дн",
+            "Возвраты за 14 дн",
+            "Динамика заказов",
+        ]
         stock: DataFrame = df.select(pl.selectors.by_index(0, 17, 20))
         stock = stock.select(
             pl.lit(pl.arange(1, stock.shape[0] + 1, eager=True)).alias(col_names[0]),
-            pl.all()
+            pl.all(),
         )
         for col in col_names[1:]:
             stock = stock.with_columns(pl.lit(None).alias(col))
 
         return stock
 
-    async def _generate_metrics(self,
-                                session,
-                                date_from: datetime | None = None,
-                                date_to: datetime | None = None,
-                                delta: timedelta | None = None):
+    async def _generate_metrics(
+        self,
+        session,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        delta: timedelta | None = None,
+    ):
         admin_id = await self.u_crud.get_admin_id(db_session=session)
         await self._update_headers(admin_id, session)
 
         if date_to is None:
             date_to = datetime.now()
         elif date_to > datetime.now():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Data to cannot be more than today's date")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Data to cannot be more than today's date",
+            )
         if date_from is None:
             if delta is None:
                 delta = timedelta(days=14)
@@ -169,16 +192,20 @@ class OzonRequestService:
         output_data = []
         col_names = ["sku", "product_id", "ordered", "returns"]
         while True:
-            body = OzonGetMetrixReq(date_from=date_from,
-                                    date_to=date_to,
-                                    metrics=[Metrics.ordered_units, Metrics.returns],
-                                    dimension=[DimensionType.sku],
-                                    sort=[SortedParams(key=Metrics.ordered_units, order=Order.DESC)],
-                                    limit=limit,
-                                    offset=offset)
+            body = OzonGetMetrixReq(
+                date_from=date_from,
+                date_to=date_to,
+                metrics=[Metrics.ordered_units, Metrics.returns],
+                dimension=[DimensionType.sku],
+                sort=[SortedParams(key=Metrics.ordered_units, order=Order.DESC)],
+                limit=limit,
+                offset=offset,
+            )
             async with aiohttp.ClientSession() as session:
                 response = await session.post(
-                    settings.OZON_URL + "/v1/analytics/data", headers=self.headers, data=body.json()
+                    settings.OZON_URL + "/v1/analytics/data",
+                    headers=self.headers,
+                    data=body.json(),
                 )
                 if 200 <= response.status <= 300:
                     result = await response.json()
@@ -208,12 +235,21 @@ class OzonRequestService:
         history_order = df.select(pl.selectors.by_index(0))
         stock = await self._fill_init_data_stock(df)
 
-        names_sheets = list(zip(self.sheets[:1] + self.sheets[2:],
-                                [handbook, history_order, stock], strict=False))
+        names_sheets = list(
+            zip(
+                self.sheets[:1] + self.sheets[2:],
+                [handbook, history_order, stock],
+                strict=False,
+            )
+        )
         await self.save_dataframes(session, names_sheets)
 
     @staticmethod
-    def add_sparklines(sheet_writer: Worksheet, sheet_from: tuple[str, DataFrame], sheet_to: tuple[str, DataFrame]):
+    def add_sparklines(
+        sheet_writer: Worksheet,
+        sheet_from: tuple[str, DataFrame],
+        sheet_to: tuple[str, DataFrame],
+    ):
         metrix_name, metrix_sheet = sheet_from
         length = len(metrix_sheet.columns)
         last_letter = xl_col_to_name(length - 1)
@@ -221,17 +257,18 @@ class OzonRequestService:
             spark_cols = metrix_sheet.columns[-5:]
         else:
             spark_cols = metrix_sheet.columns[1:]
-        avg = metrix_sheet.select(*spark_cols).with_columns(
-            pl.mean_horizontal(pl.all()).alias("avg"),
-        ).select("avg")
-        stock_name, stock_sheet = sheet_to
-        avg = stock_sheet.select(pl.nth(4)).with_columns(
-            avg
+        avg = (
+            metrix_sheet.select(*spark_cols)
+            .with_columns(
+                pl.mean_horizontal(pl.all()).alias("avg"),
+            )
+            .select("avg")
         )
+        stock_name, stock_sheet = sheet_to
+        avg = stock_sheet.select(pl.nth(4)).with_columns(avg)
 
         rows, cols = sheet_to[1].shape
         for ind_row, orders_14_d_and_avg in enumerate(avg.rows(), 1):
-
             if orders_14_d_and_avg[0] > orders_14_d_and_avg[1]:
                 color = "green"
             elif orders_14_d_and_avg[0] == orders_14_d_and_avg[1]:
@@ -240,14 +277,17 @@ class OzonRequestService:
                 color = "red"
 
             sheet_writer.add_sparkline(
-                ind_row, cols - 1,
+                ind_row,
+                cols - 1,
                 {
                     "range": f"'{sheet_from[0]}'!B{ind_row + 1}:{last_letter}{ind_row + 1}",
-                    "series_color": color
-                }
+                    "series_color": color,
+                },
             )
 
-    async def save_to_excel(self, nms_sh: list[tuple[str, DataFrame]], add_sparks: bool = False) -> BytesIO:
+    async def save_to_excel(
+        self, nms_sh: list[tuple[str, DataFrame]], add_sparks: bool = False
+    ) -> BytesIO:
         file = io.BytesIO()
         wb = xlsxwriter.Workbook(file)
         for name, sheet in nms_sh:
@@ -256,20 +296,16 @@ class OzonRequestService:
                 sheet_writer = wb.add_worksheet(name)
                 self.add_sparklines(sheet_writer, sheet_from, (name, sheet))
 
-            sheet.write_excel(
-                wb,
-                worksheet=name,
-                autofit=True,
-                autofilter=True
-            )
+            sheet.write_excel(wb, worksheet=name, autofit=True, autofilter=True)
         wb.close()
         return file
 
     async def save_dataframes(
-            self,
-            session,
-            nms_dfs, is_update: bool = False,
-            add_sparks: bool = False,
+        self,
+        session,
+        nms_dfs,
+        is_update: bool = False,
+        add_sparks: bool = False,
     ):
         file = await self.save_to_excel(nms_dfs, add_sparks)
         users = await self.u_crud.get_all_id(db_session=session)
@@ -281,8 +317,7 @@ class OzonRequestService:
                 report_type=ReportType.seller_metrics.lower(),
             )
             report = await self.or_crud.get_last_by_report_type(
-                type=ReportType.seller_metrics.lower(),
-                db_session=session
+                type=ReportType.seller_metrics.lower(), db_session=session
             )
             await self.or_crud.update(
                 obj_current=report,
@@ -296,9 +331,7 @@ class OzonRequestService:
                 report_type=ReportType.seller_metrics.lower(),
             )
             await self.or_crud.create_seller_report_for_all_users(
-                users=users,
-                report=orm_report,
-                db_session=session
+                users=users, report=orm_report, db_session=session
             )
 
     @staticmethod
@@ -309,25 +342,29 @@ class OzonRequestService:
             metrics_curr_col_name = metrics.columns[ind_metr]
 
             stock: DataFrame = (
-                stock
-                .join(metrics.select(pl.nth([0, ind_metr])), left_on=stock.columns[1], right_on=right_on,
-                      how="left")
+                stock.join(
+                    metrics.select(pl.nth([0, ind_metr])),
+                    left_on=stock.columns[1],
+                    right_on=right_on,
+                    how="left",
+                )
                 .with_columns(
                     pl.col(stock_curr_col_name).fill_null(pl.col(metrics_curr_col_name))
                 )
-                .drop(right_on, metrics_curr_col_name))
+                .drop(right_on, metrics_curr_col_name)
+            )
         stock = stock.with_columns(
             pl.col(stock.columns[5]).fill_null(pl.col(stock.columns[4]) / delta.days),
         )
         stock = stock.with_columns(
-            (pl.col(stock.columns[2]) / pl.col(stock.columns[5])).alias(stock.columns[6])
+            (pl.col(stock.columns[2]) / pl.col(stock.columns[5])).alias(
+                stock.columns[6]
+            )
         )
 
         stock = stock.fill_nan(0).fill_null(0)
         stock = stock.with_columns(
-            pl.when(
-                pl.col(pl.Float64).is_infinite()
-            )
+            pl.when(pl.col(pl.Float64).is_infinite())
             .then(0)
             .otherwise(pl.col(pl.Float64))
             .keep_name()
@@ -336,7 +373,9 @@ class OzonRequestService:
         stock.select(pl.last())
         return stock
 
-    async def _fill_data_metrics(self, session, date_from, date_to, delta: timedelta = None):
+    async def _fill_data_metrics(
+        self, session, date_from, date_to, delta: timedelta = None
+    ):
         if delta is None:
             delta = timedelta(14)
 
@@ -345,45 +384,55 @@ class OzonRequestService:
         stock = await self._fill_init_data_stock(df)
 
         report = await self.or_crud.get_last_by_report_type(
-            type=ReportType.seller_metrics.lower(),
-            db_session=session
+            type=ReportType.seller_metrics.lower(), db_session=session
         )
         hb = pl.read_excel(BytesIO(report.report), sheet_name="Handbook")
         ho = pl.read_excel(BytesIO(report.report), sheet_name="OrdersHistory")
-        metrics = await self._generate_metrics(session, date_from=date_from, date_to=date_to, delta=delta)
+        metrics = await self._generate_metrics(
+            session, date_from=date_from, date_to=date_to, delta=delta
+        )
         sku_col = metrics.columns[0]
         sku_product_id_col = hb.select(pl.nth([0, 1]))
 
-        metrics = (metrics.join(left_on=metrics.columns[1],
-                                right_on=sku_product_id_col.columns[1],
-                                how="inner",
-                                other=sku_product_id_col)
-                   .drop(sku_col)
-                   .rename({sku_product_id_col.columns[0]: sku_col}))
+        metrics = (
+            metrics.join(
+                left_on=metrics.columns[1],
+                right_on=sku_product_id_col.columns[1],
+                how="inner",
+                other=sku_product_id_col,
+            )
+            .drop(sku_col)
+            .rename({sku_product_id_col.columns[0]: sku_col})
+        )
         metrics = metrics.select(pl.nth([3, 0, 1, 2]))
 
         stock = self.fill_stock(stock, metrics, delta)
 
         delta_by_days = (
-            stock.select(pl.selectors.by_index(1, 4)).clone()
-            .with_columns(
-                (pl.col(stock.columns[4])).alias(str(datetime.today()))
-            )
+            stock.select(pl.selectors.by_index(1, 4))
+            .clone()
+            .with_columns((pl.col(stock.columns[4])).alias(str(datetime.today())))
             .drop(stock.columns[4])
         )
-        ho = (ho.join(delta_by_days, left_on=ho.columns[0], right_on=delta_by_days.columns[0], how='inner'))
+        ho = ho.join(
+            delta_by_days,
+            left_on=ho.columns[0],
+            right_on=delta_by_days.columns[0],
+            how="inner",
+        )
         names_dfs = list(zip(self.sheets, [hb, metrics, ho, stock], strict=False))
         await self.save_dataframes(session, names_dfs, False, True)
 
-    async def generate_metrics(self, date_from: datetime = None,
-                               date_to: datetime = None,
-                               delta: timedelta | None = None):
+    async def generate_metrics(
+        self,
+        date_from: datetime = None,
+        date_to: datetime = None,
+        delta: timedelta | None = None,
+    ):
         async with get_db() as session:
             report = await self.or_crud.get_last_by_report_type(
-                type=ReportType.seller_metrics.lower(),
-                db_session=session
+                type=ReportType.seller_metrics.lower(), db_session=session
             )
             if report is None:
                 await self._generate_templates(session)
             await self._fill_data_metrics(session, date_from, date_to, delta)
-

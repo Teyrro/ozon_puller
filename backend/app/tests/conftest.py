@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from backend.app.tests.utils.utils import get_superuser_token_headers
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -18,10 +19,9 @@ from app.db.session import SessionLocal
 from app.main import app
 from app.schemas.role_schema import IRoleEnum
 from app.tests.utils.user import authentication_token_from_email, create_random_user
-from backend.app.tests.utils.utils import get_superuser_token_headers
 
 CLEAN_TABLES = [
-    "\"User\"",
+    '"User"',
 ]
 
 
@@ -61,7 +61,9 @@ async def prepare_database(async_session_test):
     yield
     async with async_session_test as session:
         for table_for_cleaning in CLEAN_TABLES:
-            await session.execute(text(f""" TRUNCATE TABLE {table_for_cleaning} CASCADE;"""))
+            await session.execute(
+                text(f""" TRUNCATE TABLE {table_for_cleaning} CASCADE;""")
+            )
         await session.commit()
 
 
@@ -82,8 +84,12 @@ async def superuser_token_headers(client: AsyncClient) -> dict[str, str]:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def normal_user_token_headers(client: AsyncClient, async_session_test: SessionLocal) -> Coroutine[
-    Any, Any, dict[str, str]]:
+async def normal_user_token_headers(
+    client: AsyncClient, async_session_test: SessionLocal
+) -> Coroutine[Any, Any, dict[str, str]]:
     return await authentication_token_from_email(
-        client=client, email=settings.EMAIL_TEST_USER, db=async_session_test, role=IRoleEnum.user
+        client=client,
+        email=settings.EMAIL_TEST_USER,
+        db=async_session_test,
+        role=IRoleEnum.user,
     )

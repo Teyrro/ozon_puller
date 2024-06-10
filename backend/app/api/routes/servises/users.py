@@ -42,12 +42,15 @@ class UserService:
         return deleted_user
 
     async def update_password_me(self, body: IUserUpdatePassword, current_user: User):
-        user = await self.crud.authenticate(email=current_user.email, password=body.current_password)
+        user = await self.crud.authenticate(
+            email=current_user.email, password=body.current_password
+        )
         if not user:
             raise HTTPException(status_code=400, detail="Incorrect password")
         if body.current_password == body.new_password:
             raise HTTPException(
-                status_code=400, detail="New password cannot be the same as the current one"
+                status_code=400,
+                detail="New password cannot be the same as the current one",
             )
         hashed_password = get_password_hash(body.new_password)
         new_data = current_user.model_copy()
@@ -55,9 +58,9 @@ class UserService:
         await self.crud.update(obj_current=current_user, obj_new=new_data)
 
     async def update_user_me(
-            self,
-            updated_param: IUserUpdateMe | dict[str, Any],
-            current_user: User,
+        self,
+        updated_param: IUserUpdateMe | dict[str, Any],
+        current_user: User,
     ) -> User | None:
         body = updated_param.dict(exclude_none=True)
         if body == {}:
@@ -65,9 +68,7 @@ class UserService:
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="At least one parameter for user update info should be provided",
             )
-        updated_user = await self.crud.update(
-            obj_new=body, obj_current=current_user
-        )
+        updated_user = await self.crud.update(obj_new=body, obj_current=current_user)
         return updated_user
 
     async def read_user_by_id(self, user_id: UUID) -> User | None:

@@ -55,16 +55,16 @@ class IDeleteResponseBase(IResponseBase[DataType], Generic[DataType]):
 
 
 def create_response(
-        data: DataType,
-        message: str | None = None,
-        meta: dict | Any | None = None,
+    data: DataType,
+    message: str | None = None,
+    meta: dict | Any | None = None,
 ) -> (
-        IResponseBase[DataType]
-        | IGetResponsePaginated[DataType]
-        | IGetResponseBase[DataType]
-        | IPutResponseBase[DataType]
-        | IDeleteResponseBase[DataType]
-        | IPostResponseBase[DataType]
+    IResponseBase[DataType]
+    | IGetResponsePaginated[DataType]
+    | IGetResponseBase[DataType]
+    | IPutResponseBase[DataType]
+    | IDeleteResponseBase[DataType]
+    | IPostResponseBase[DataType]
 ):
     if meta is None:
         meta = {}

@@ -5,7 +5,7 @@ from app.api.routes.ozon_request import ozon_request_router
 from app.api.routes.report import report_router
 from app.api.routes.role import role_router
 from app.api.routes.users import user_router
-from app.core.config import settings, ModeEnum
+from app.core.config import ModeEnum, settings
 
 main_api_router = APIRouter()
 

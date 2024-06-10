@@ -21,5 +21,5 @@ class OzonReport(BaseUUIDModel, OzonReportBase, table=True):
     user: list["User"] = Relationship(
         back_populates="ozon_reports",
         link_model=LinkUserOzonReport,
-        sa_relationship_kwargs={"lazy": "selectin"}
+        sa_relationship_kwargs={"lazy": "selectin"},
     )
