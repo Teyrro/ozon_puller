@@ -34,12 +34,13 @@ class CRUDOzonData(CRUDBase[OzonData, IOzonDataCreate, IOzonDataUpdate]):
 
     async def get_by_user_id(
         self, *, id, db_session: AsyncSession | None = None
-    ) -> OzonData:
+    ) -> OzonData | None:
         session = db_session or self.db.session
         stmt = select(OzonData).where(OzonData.user_id == id)
         ozon_info = await session.execute(stmt)
         data: OzonData = ozon_info.scalar_one_or_none()
-
+        if data is None:
+            return
         data_out: OzonData = data.copy()
         data_out.api_key = await security.get_context(data_out.api_key)
         return data_out

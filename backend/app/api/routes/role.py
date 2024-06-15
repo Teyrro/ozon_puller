@@ -35,7 +35,7 @@ async def get_roles(
     Gets a paginated list of roles
     """
     roles = await crud.role.get_multi_paginated(params=params)
-    return create_response(data=roles)
+    return create_response(data=roles, message="Roles fetched successfully")
 
 
 @role_router.get(
@@ -49,7 +49,7 @@ async def get_role_by_id(
     """
     Gets a role by its id
     """
-    return create_response(data=role)
+    return create_response(data=role, message="Role retrieved successfully")
 
 
 @role_router.post(
@@ -72,7 +72,7 @@ async def create_role(
         raise NameExistException(Role, name=role_current.name)
 
     new_role = await crud.role.create(obj_in=role)
-    return create_response(data=new_role)
+    return create_response(data=new_role, message="Role created successfully")
 
 
 @role_router.put(
@@ -94,4 +94,4 @@ async def update_role(
         raise ContentNoChangeException()
 
     updated_role = await crud.role.update(obj_current=current_role, obj_new=role)
-    return create_response(data=updated_role)
+    return create_response(data=updated_role, message="Role updated!")
