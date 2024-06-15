@@ -47,10 +47,11 @@ add_pagination(user_router)
     "/",
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+    response_model=IPostResponseBase[IUserRead],
 )
 async def create_user(
     user_in: IUserCreate,
-) -> IPostResponseBase[IUserRead]:
+) -> Any:
     """
     Create User
 
@@ -69,7 +70,7 @@ async def create_user(
     except IntegrityError as err:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email busy",
+            detail=f"Database error {err}",
         ) from err
 
 
@@ -80,14 +81,15 @@ async def read_user_me(
     """
     Get current user.
     """
-    return create_response(data=current_user)
+    return create_response(data=current_user, message="User fetched successfully")
 
 
 @user_router.get(
     "/{user_id}",
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+    response_model=IGetResponseBase[IUserReadWithRole],
 )
-async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserReadWithRole]:
+async def read_user_by_id(user_id: UUID) -> Any:
     """
     Get user by id
 
@@ -96,7 +98,7 @@ async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserReadWithRole]:
     """
     user_service = UserService(crud.user)
     user = await user_service.read_user_by_id(user_id)
-    return create_response(data=user)
+    return create_response(data=user, message="User fetched successfully")
 
 
 @user_router.get(
@@ -112,7 +114,7 @@ async def read_users(
     - admin
     """
     users = await crud.user.get_multi_paginated(params=params)
-    return create_response(data=users)
+    return create_response(data=users, message="Users fetched successfully")
 
 
 @user_router.get(
@@ -143,7 +145,7 @@ async def read_users_list_by_role_name(
         users = await user_service.read_users_by_role_name(
             user_status, role_name, name, params
         )
-        return create_response(data=users)
+        return create_response(data=users, message="Users fetched successfully")
     except IntegrityError as err:
         print(err)
 
@@ -165,16 +167,16 @@ async def get_user_list_order_by_created_at(
     users = await crud.user.get_multi_paginated_ordered(
         params=params, order_by="created_at"
     )
-    return create_response(data=users)
+    return create_response(data=users, message="Users fetched successfully")
 
 
-@user_router.delete("/{user_id}")
+@user_router.delete("/{user_id}", response_model=IDeleteResponseBase[IUserRead])
 async def delete_user(
     user_id: UUID = Depends(user_deps.is_valid_user_id),
     current_user: User = Depends(
         deps.get_current_user(required_roles=[IRoleEnum.admin])
     ),
-) -> IDeleteResponseBase[IUserRead]:
+) -> Any:
     """
     Delete user
 
@@ -186,18 +188,19 @@ async def delete_user(
         raise UserSelfDeleteException()
 
     deleted_user = await user_service.delete(user_id)
-    return create_response(data=deleted_user)
+    return create_response(data=deleted_user, message="User deleted successfully")
 
 
 @user_router.patch(
     "/{user_id}",
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+    response_model=IPutResponseBase[IUserRead],
 )
 async def update_user(
     *,
     body: IUserUpdate,
     user_id: UUID = Depends(user_deps.is_valid_user_id),
-) -> IPutResponseBase[IUserRead]:
+) -> Any:
     user_service = UserService(crud.user)
     try:
         updated_user = await user_service.update_user(user_id, body)
@@ -207,7 +210,7 @@ async def update_user(
             detail=f"Database error: {err}",
         ) from err
 
-    return create_response(data=updated_user)
+    return create_response(data=updated_user, message="User updated successfully")
 
 
 @user_router.patch("/me/password")
@@ -222,11 +225,11 @@ async def update_password_me(
     return MessageResponse(message="Password updated successfully")
 
 
-@user_router.put("/me")
+@user_router.put("/me", response_model=IPutResponseBase[IUserRead])
 async def update_user_me(
     body: IUserUpdateMe,
     current_user: UserAuthDep,
-) -> IPutResponseBase[IUserRead]:
+) -> Any:
     user_service = UserService(crud.user)
     try:
         updated_user = await user_service.update_user_me(
@@ -238,4 +241,4 @@ async def update_user_me(
             detail=f"Database error: {err}",
         ) from err
 
-    return create_response(data=updated_user)
+    return create_response(data=updated_user, message="User updated successfully")

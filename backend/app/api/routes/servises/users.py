@@ -30,6 +30,12 @@ class UserService:
         self.crud = crud
 
     async def create(self, user_in: IUserCreate) -> User:
+        user = await self.crud.get_by_email(email=user_in.email)
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"User with email {user_in.email} already exists",
+            )
         user = await self.crud.create_with_role(obj_in=user_in)
         return user
 
@@ -63,12 +69,12 @@ class UserService:
         updated_param: IUserUpdateMe | dict[str, Any],
         current_user: User,
     ) -> User | None:
-        body = updated_param.dict(exclude_none=True)
-        if body == {}:
+        if updated_param.dict(exclude_none=True) == {}:
             raise HTTPException(
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="At least one parameter for user update info should be provided",
             )
+
         updated_user = await self.crud.update_user_me(
             obj_in=updated_param, user=current_user
         )
@@ -79,6 +85,18 @@ class UserService:
         target_user_id: UUID,
         updated_param: IUserUpdate | dict[str, Any],
     ) -> User | None:
+        if updated_param.dict(exclude_none=True) == {}:
+            raise HTTPException(
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+                detail="At least one parameter for user update info should be provided",
+            )
+        if updated_param.email:
+            user = await self.crud.get_by_email(email=updated_param.email)
+            if user:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User with email {updated_param.email} already exists",
+                )
         user_to_update = await self.crud.get(id=target_user_id)
         return await self.crud.update_from_admin_role(
             obj_in=updated_param, user=user_to_update
