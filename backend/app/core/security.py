@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any
 
-import fernet
+from cryptography import fernet
 from jose import jwt
 from passlib.context import CryptContext
 from pydantic import EmailStr
@@ -42,10 +42,10 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_data_encrypt(data) -> str:
-    data = fernet.encrypt(data)
+async def get_data_encrypt(data: str) -> str:
+    data = fernet.encrypt(data.encode("utf-8"))
     return data.decode("utf-8")
 
 
-def get_context(variable: str) -> str:
-    return fernet.decrypt(variable.encode()).decode()
+async def get_context(variable: str) -> str:
+    return fernet.decrypt(variable).decode()

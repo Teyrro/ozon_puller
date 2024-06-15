@@ -18,6 +18,29 @@ class ContentNoChangeException(HTTPException):
         )
 
 
+class OnlyOneAdminUserException(HTTPException, Generic[ModelType]):
+    def __init__(
+        self,
+        model: type[ModelType],
+        id: UUID | str | None = None,
+        name: str | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> None:
+        if id:
+            super().__init__(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Unable to add the extra {model.__name__}.",
+                headers=headers,
+            )
+            return
+
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{model.__name__} id not found.",
+            headers=headers,
+        )
+
+
 class IdNotFoundException(HTTPException, Generic[ModelType]):
     def __init__(
         self,

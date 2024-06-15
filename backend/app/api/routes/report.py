@@ -6,6 +6,7 @@ from starlette.responses import StreamingResponse
 
 from app import crud
 from app.schemas.ozon_report_schema import IOzonReportRead
+from app.schemas.ozon_requests_schema import ReportType
 from app.schemas.response_schema import (
     IDeleteResponseBase,
     IGetResponsePaginated,
@@ -21,12 +22,19 @@ async def remove_report(id) -> IDeleteResponseBase[IOzonReportRead]:
     return create_response(report, message="Report removed")
 
 
-@report_router.post("/")
+@report_router.post("/download")
 async def download_file(id) -> StreamingResponse:
     report = await crud.ozon_report.get(id=id)
-    stream = BytesIO(report.report)
-    media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    filename = "metrics.xlsx"
+    filename = media_type = stream = None
+    if report.report_type == ReportType.seller_products.lower():
+        stream = BytesIO(report.report)
+        media_type = "text/csv;charset=utf-8"
+        filename = "users.csv"
+    elif report.report_type == ReportType.seller_metrics.lower():
+        stream = BytesIO(report.report)
+        media_type = "application/octet-stream"
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8"
+        filename = "metrics.xlsx"
     response = StreamingResponse(
         iter([stream.getvalue()]),
         media_type=media_type,

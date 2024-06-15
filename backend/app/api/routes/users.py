@@ -25,11 +25,16 @@ from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import (
     IUserCreate,
     IUserRead,
+    IUserReadWithRole,
     IUserStatus,
+    IUserUpdate,
     IUserUpdateMe,
     IUserUpdatePassword,
 )
-from app.utils.exceptions.common_exceptions import IdNotFoundException
+from app.utils.exceptions.common_exceptions import (
+    IdNotFoundException,
+    OnlyOneAdminUserException,
+)
 from app.utils.exceptions.user_exceptions import UserSelfDeleteException
 
 # logger = getLogger(__name__)
@@ -56,18 +61,22 @@ async def create_user(
         role = await crud.role.get(id=user_in.role_id)
         if not role:
             raise IdNotFoundException(Role, id=user_in.role_id)
+        if role.name == IRoleEnum.admin:
+            raise OnlyOneAdminUserException(Role, name=role.name)
         user_service = UserService(crud.user)
         user = await user_service.create(user_in)
         return create_response(data=user)
     except IntegrityError as err:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database error {err}",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email busy",
         ) from err
 
 
 @user_router.get("/me")
-async def read_user_me(current_user: UserAuthDep) -> IGetResponseBase[IUserRead]:
+async def read_user_me(
+    current_user: UserAuthDep,
+) -> IGetResponseBase[IUserReadWithRole]:
     """
     Get current user.
     """
@@ -78,7 +87,7 @@ async def read_user_me(current_user: UserAuthDep) -> IGetResponseBase[IUserRead]
     "/{user_id}",
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
 )
-async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserRead]:
+async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserReadWithRole]:
     """
     Get user by id
 
@@ -93,7 +102,9 @@ async def read_user_by_id(user_id: UUID) -> IGetResponseBase[IUserRead]:
 @user_router.get(
     "/list/", dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))]
 )
-async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserRead]:
+async def read_users(
+    params: Params = Depends(),
+) -> IGetResponsePaginated[IUserReadWithRole]:
     """
     Retrieve users.
 
@@ -107,7 +118,7 @@ async def read_users(params: Params = Depends()) -> IGetResponsePaginated[IUserR
 @user_router.get(
     "/list/by_role_name",
     dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
-    response_model=IGetResponsePaginated[IUserRead],
+    response_model=IGetResponsePaginated[IUserReadWithRole],
 )
 async def read_users_list_by_role_name(
     role_name: str,
@@ -143,7 +154,7 @@ async def read_users_list_by_role_name(
 )
 async def get_user_list_order_by_created_at(
     params: Params = Depends(),
-) -> IGetResponsePaginated[IUserRead]:
+) -> IGetResponsePaginated[IUserReadWithRole]:
     """
     Gets a paginated list of users ordered by created datetime
 
@@ -178,6 +189,27 @@ async def delete_user(
     return create_response(data=deleted_user)
 
 
+@user_router.patch(
+    "/{user_id}",
+    dependencies=[Depends(deps.get_current_user([IRoleEnum.admin]))],
+)
+async def update_user(
+    *,
+    body: IUserUpdate,
+    user_id: UUID = Depends(user_deps.is_valid_user_id),
+) -> IPutResponseBase[IUserRead]:
+    user_service = UserService(crud.user)
+    try:
+        updated_user = await user_service.update_user(user_id, body)
+    except IntegrityError as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database error: {err}",
+        ) from err
+
+    return create_response(data=updated_user)
+
+
 @user_router.patch("/me/password")
 async def update_password_me(
     *, body: IUserUpdatePassword, current_user: UserAuthDep
@@ -190,7 +222,7 @@ async def update_password_me(
     return MessageResponse(message="Password updated successfully")
 
 
-@user_router.patch("/me")
+@user_router.put("/me")
 async def update_user_me(
     body: IUserUpdateMe,
     current_user: UserAuthDep,

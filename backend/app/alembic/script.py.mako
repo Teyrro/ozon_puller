@@ -9,7 +9,8 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import sqlmodel             # NEW
+import sqlalchemy_utils
+import sqlmodel # added
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.
@@ -20,7 +21,9 @@ depends_on: Union[str, Sequence[str], None] = ${repr(depends_on)}
 
 
 def upgrade() -> None:
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
     ${upgrades if upgrades else "pass"}
+
 
 
 def downgrade() -> None:

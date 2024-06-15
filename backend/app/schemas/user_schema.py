@@ -8,6 +8,7 @@ from starlette import status
 
 from app.models.user_models import UserBase
 from app.schemas.base_schema import TunedModel
+from app.schemas.ozon_data_schema import IOzonDataUpdateWithId
 from app.schemas.role_schema import IRoleRead
 from app.utils.partial import partial_model
 
@@ -42,14 +43,21 @@ class IUserCreate(NameSurnameValidator, UserBase):
     model_config = ConfigDict()
 
 
+class IUserCreateWithOzData(IUserCreate):
+    ozon_confidential: IOzonDataUpdateWithId | None = None
+
+
 class IUserRead(TunedModel, UserBase):
     id: UUID
-    role: IRoleRead | None = None
+
+
+class IUserReadWithRole(IUserRead):
+    role: IRoleRead
 
 
 @partial_model
 class IUserUpdate(UserBase):
-    pass
+    password: str
 
 
 class IUserUpdateMe(NameSurnameValidator, BaseModel):

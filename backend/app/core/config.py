@@ -2,6 +2,7 @@ import warnings
 from enum import Enum
 from typing import Annotated, Any
 
+from dotenv import load_dotenv
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -15,7 +16,7 @@ from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
-# load_dotenv()
+load_dotenv()
 
 
 class ModeEnum(str, Enum):
@@ -45,7 +46,6 @@ class Settings(BaseSettings):
     # Project
     PROJECT_NAME: str
     DOMAIN: str = "localhost"
-    PORT: int
     MODE: ModeEnum = ModeEnum.testing
     ENVIRONMENT: ModeEnum = ModeEnum.development
     API_V1_STR: str = "/api/v1"
@@ -179,3 +179,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# @lru_cache
+# def get_settings():
+#     return config.Settings()

@@ -23,27 +23,12 @@ celery = Celery(
     include="app.api.celery_task",  # route where tasks are defined
     task_cls=celery_typed_tasks.TypedTask,
 )
-# beat_schedule = {
-#     'print-every-sec': {
-#         'task': 'tasks.print_hello',
-#         'schedule': 30,
-#     },
-#     'download_reports': {
-#         'task': 'tasks.download_reports',
-#         'schedule': schedules.crontab("0", "2", "*"),
-#     },
-#     'generate_metrics': {
-#         'task': 'tasks.generate_metrics',
-#         'schedule': schedules.crontab("20", "2", "*"),
-#     },
-# }
-# celery.control.purge()
 
 beat_max_loop_interval = 10
 
 beat_dburi = str(settings.SYNC_CELERY_BEAT_DATABASE_URI)
 
-timezone = "UTC"
+timezone = "Asia/Novosibirsk"
 
 worker_max_tasks_per_child = 3
 

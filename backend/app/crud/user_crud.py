@@ -8,7 +8,7 @@ from app.core.security import get_password_hash, verify_password
 from app.crud.base_crud import CRUDBase
 from app.models import Role, User
 from app.schemas.role_schema import IRoleEnum
-from app.schemas.user_schema import IUserCreate, IUserUpdate
+from app.schemas.user_schema import IUserCreate, IUserUpdate, IUserUpdateMe
 
 
 class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
@@ -25,6 +25,38 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
             return None
         if user.is_active is False:
             return None
+        return user
+
+    async def update_user_me(
+        self, obj_in: IUserUpdateMe, user: User, db_session: AsyncSession | None = None
+    ) -> User:
+        obj_in_data = obj_in.model_dump(exclude_unset=True)
+        user.sqlmodel_update(obj_in_data)
+
+        db_session = db_session or self.db.session
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+        return user
+
+    # async def update_with_oz_data(
+    #         self, *, obj_in: IUserUpdateMe, user: User, db_session: AsyncSession | None = None
+    # ) -> User:
+    #     obj_in_data = obj_in.model_dump(exclude_unset=True)
+    #     user.sqlmodel_update(obj_in_data)
+    #     return await self._update_value(obj_in, user, db_session)
+
+    async def update_from_admin_role(
+        self, *, obj_in: IUserUpdate, user: User, db_session: AsyncSession | None = None
+    ) -> User:
+        obj_in_data = obj_in.model_dump(exclude_unset=True)
+        if obj_in.password is not None:
+            hashed_pswd = {"hashed_password": get_password_hash(obj_in.password)}
+            user.sqlmodel_update(obj_in_data, update=hashed_pswd)
+        db_session = db_session or self.db.session
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
         return user
 
     async def create_with_role(

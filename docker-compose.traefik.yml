@@ -52,13 +52,16 @@ services:
       # Create an entrypoint "https" listening on port 443
       - --entrypoints.https.address=:443
       # Create the certificate resolver "le" for Let's Encrypt, uses the environment variable EMAIL
-#      - --certificatesresolvers.le.acme.email=${EMAIL?Variable not set}
+      - --certificatesresolvers.le.acme.email=${FOR_TLS_EMAIL?Variable not set}
+      # Use the TLS Challenge for Let's Encrypt
+      - --certificatesresolvers.le.acme.tlschallenge=true
       # Store the Let's Encrypt certificates in the mounted volume
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
-      - --certificatesresolvers.le.acme.dnschallenge.provider=regru
-      - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
-      # Use the TLS Challenge for Let's Encrypt
-#      - --certificatesresolvers.le.acme.tlschallenge=true
+      # Use the DNS Challenge for Let's Encrypt
+#      - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+#      - --certificatesresolvers.le.acme.dnschallenge=true
+#      - --certificatesresolvers.le.acme.dnschallenge.provider=regru
+
       # Enable the access log, with HTTP requests
       - --accesslog
       # Enable the Traefik log, for configurations and errors

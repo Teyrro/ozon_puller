@@ -1,7 +1,8 @@
-import uuid
 from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
 from pydantic import EmailStr
+from sqlalchemy.orm import relationship
 from sqlmodel import AutoString, Field, Relationship, SQLModel
 
 from app.models.base_uuid_model import BaseUUIDModel
@@ -18,17 +19,23 @@ class UserBase(SQLModel):
     surname: str
     email: EmailStr = Field(nullable=False, unique=True, index=True, sa_type=AutoString)
     is_active: bool = Field(default=True)
-    role_id: uuid.UUID | None = Field(default=None, foreign_key="Role.id")
+    role_id: UUID | None = Field(nullable=False, foreign_key="Role.id", default=None)
 
 
 class User(BaseUUIDModel, UserBase, table=True):
     hashed_password: str | None = Field(nullable=False, index=True, default=None)
     role: Optional["Role"] = Relationship(
-        back_populates="users", sa_relationship_kwargs={"lazy": "joined"}
+        back_populates="user",
+        sa_relationship_kwargs={"lazy": "joined", "uselist": True},
     )
 
-    ozon_confidential: "OzonData" = Relationship(
-        back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    ozon_confidential: Optional["OzonData"] = Relationship(
+        sa_relationship=relationship(
+            back_populates="user",
+            cascade="all, delete-orphan",
+            lazy="joined",
+            single_parent=True,
+        )
     )
     ozon_reports: list["OzonReport"] = Relationship(
         back_populates="user",

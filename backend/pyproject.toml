@@ -25,7 +25,6 @@ sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
 uuid7 = "^0.1.0"
 pydantic = "^2.7.1"
 fastapi-pagination = "^0.12.24"
-fernet = "^1.0.1"
 polars = "^0.20.28"
 xlsx2csv = "^0.8.2"
 xlsxwriter = "^3.2.0"
@@ -36,6 +35,8 @@ redis = "^5.0.4"
 sqlalchemy-celery-beat = "^0.7.1"
 pyjwt = "^2.8.0"
 celery-typed-tasks = "^0.1.25"
+python-dotenv = "^1.0.1"
+cryptography = "^42.0.8"
 
 
 

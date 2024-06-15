@@ -12,12 +12,14 @@ async def get_products():
 
     """
     download_seller_reports.delay()
+    # or_service: OzonRequestService = OzonRequestService()
+    # await or_service.download_reports()
 
 
 @ozon_request_router.post("/metrix")
 async def get_metrix():
     """
-    Generate .xlsx file with metrix
+    Generate .xlsx f    ile with metrix
     """
     generate_metrics.delay()
     # or_service: OzonRequestService = OzonRequestService()

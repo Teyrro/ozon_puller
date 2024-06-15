@@ -38,7 +38,12 @@ class CRUDOzonReport(CRUDBase[OzonReport, IOzonReportCreate, IOzonReportUpdate])
     async def get_last_by_report_type(
         self, *, type: ReportType, db_session: AsyncSession | None = None
     ):
-        stmt = select(OzonReport).where(OzonReport.report_type == type).limit(1)
+        stmt = (
+            select(OzonReport)
+            .where(OzonReport.report_type == type)
+            .order_by(desc(OzonReport.created_at))
+            .limit(1)
+        )
         session = db_session or self.db.session
         metrics = await session.execute(stmt)
         return metrics.scalar_one_or_none()
