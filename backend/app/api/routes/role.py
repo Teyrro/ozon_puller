@@ -90,12 +90,8 @@ async def update_role(
     Required roles:
     - admin
     """
-    if current_role.name == role.name and current_role.description == role.description:
+    if current_role.description == role.description:
         raise ContentNoChangeException()
-
-    exist_role = await crud.role.get_role_by_name(name=role.name)
-    if exist_role:
-        raise NameExistException(Role, name=role.name)
 
     updated_role = await crud.role.update(obj_current=current_role, obj_new=role)
     return create_response(data=updated_role)

@@ -13,6 +13,7 @@ from app.models.user_models import User
 from app.schemas.user_schema import (
     IUserCreate,
     IUserStatus,
+    IUserUpdate,
     IUserUpdateMe,
     IUserUpdatePassword,
 )
@@ -68,8 +69,20 @@ class UserService:
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="At least one parameter for user update info should be provided",
             )
-        updated_user = await self.crud.update(obj_new=body, obj_current=current_user)
+        updated_user = await self.crud.update_user_me(
+            obj_in=updated_param, user=current_user
+        )
         return updated_user
+
+    async def update_user(
+        self,
+        target_user_id: UUID,
+        updated_param: IUserUpdate | dict[str, Any],
+    ) -> User | None:
+        user_to_update = await self.crud.get(id=target_user_id)
+        return await self.crud.update_from_admin_role(
+            obj_in=updated_param, user=user_to_update
+        )
 
     async def read_user_by_id(self, user_id: UUID) -> User | None:
         user = await self.crud.get(id=user_id)

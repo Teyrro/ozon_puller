@@ -12,12 +12,15 @@ if TYPE_CHECKING:
 class OzonDataBase(SQLModel):
     client_id: str = Field(nullable=False)
     api_key: str = Field(nullable=False)
+
+
+class OzonDataWithUserID(OzonDataBase):
     user_id: UUID | None = Field(
         nullable=False, foreign_key="User.id", unique=True, default=None
     )
 
 
-class OzonData(BaseUUIDModel, OzonDataBase, table=True):
+class OzonData(BaseUUIDModel, OzonDataWithUserID, table=True):
     user: "User" = Relationship(
         back_populates="ozon_confidential", sa_relationship_kwargs={"lazy": "selectin"}
     )

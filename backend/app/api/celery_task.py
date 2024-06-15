@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 
 from celery.schedules import crontab
 
@@ -15,7 +16,7 @@ def download_seller_reports():
 @celery.task(ignore_result=True, name="task.generate_metrics")
 def generate_metrics():
     or_service: OzonRequestService = OzonRequestService()
-    asyncio.run(or_service.generate_metrics())
+    asyncio.run(or_service.generate_metrics(delta=timedelta(days=14)))
 
 
 # @celery.task(
@@ -29,7 +30,7 @@ def generate_metrics():
 def setup_periodic_tasks(sender, **kwargs):
     # sender.add_periodic_task(1, print_hello.s(), name='task.print_hello')
     sender.add_periodic_task(
-        crontab(hour="2"),
+        crontab(hour="2", minute="0"),
         download_seller_reports.s(),
         name="every day at 2:00 AM, download product report",
     )

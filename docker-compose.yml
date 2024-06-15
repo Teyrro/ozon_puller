@@ -8,6 +8,8 @@ services:
       - default
     build: backend/compose/multiple_databases_image
     restart: always
+    ports:
+      - 5432:5432
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
     env_file:
@@ -17,8 +19,6 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD?Variable not set}
       - POSTGRES_USER=${DATABASE_USER?Variable not set}
       - POSTGRES_DB=${DATABASE_NAME?Variable not set}
-    ports:
-      - ${DATABASE_PORT}:5432
     expose:
       - ${DATABASE_PORT}
 
@@ -41,14 +41,12 @@ services:
     restart: always
     links:
       - db:database
-    ports:
-      - ${PORT}:${PORT}
     depends_on:
       - db
     env_file:
       - .env
     environment:
-      - POSTGRES_SERVER={DATABASE_HOST}
+      - POSTGRES_SERVER=${DATABASE_HOST}
       - POSTGRES_PORT=${DATABASE_PORT}
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USER?Variable not set}
@@ -64,7 +62,7 @@ services:
       - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
 
-      - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=${PORT}
+      - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=80
 
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`) && PathPrefix(`/api`, `/docs`, `/redoc`)
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.entrypoints=http
@@ -94,7 +92,6 @@ services:
       context: ./backend
       dockerfile: ./compose/backend/Dockerfile
     command: "watchfiles 'celery -A app.core.celery worker -l info' "
-
     depends_on:
       - db
       - redis_server
@@ -119,38 +116,7 @@ services:
       - redis_server
     env_file: .env
 
-#  frontend:
-#    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
-#    restart: always
-#    networks:
-#      - traefik-public
-#      - default
-#    ports:
-#      - ${FRONTEND_PORT}:${FRONTEND_PORT}
-#    build:
-#      context: ./frontend
-#      args:
-#        - VITE_API_URL=https://${DOMAIN?Variable not set}
-#        - NODE_ENV=production
-#    labels:
-#      - traefik.enable=true
-#      - traefik.docker.network=traefik-public
-#      - traefik.constraint-label=traefik-public
-#
-#      - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=80
-#
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`)
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.entrypoints=http
-#
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.rule=Host(`${DOMAIN?Variable not set}`, `www.${DOMAIN?Variable not set}`)
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.entrypoints=https
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls=true
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.tls.certresolver=le
-#
-#      # Enable www redirection for HTTP and HTTPS
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.middlewares=${STACK_NAME?Variable not set}-www-redirect
-#      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
-#    env_file: .env
+
 
 networks:
   traefik-public:

@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from uuid import UUID
 
-from app.models.ozon_data_model import OzonDataBase
+from app.models.ozon_data_model import OzonDataBase, OzonDataWithUserID
 from app.utils.partial import partial_model
 
 
@@ -13,22 +13,10 @@ class IOzonDataUpdate(OzonDataBase):
     pass
 
 
-class TypeProduct(BaseModel):
-    type_name: str
-    type_id: int
-    disabled: bool
-    children: list
+class IOzonDataRead(OzonDataWithUserID):
+    id: UUID
 
 
-class DescriptionSubCategory(BaseModel):
-    description_category_id: int
-    category_name: str
-    disabled: bool
-    children: list[TypeProduct]
-
-
-class DescriptionCategory(BaseModel):
-    description_category_id: int
-    category_name: str
-    disabled: bool
-    children: list[DescriptionSubCategory]
+@partial_model
+class IOzonDataUpdateWithId(OzonDataBase):
+    pass

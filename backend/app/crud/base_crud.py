@@ -186,7 +186,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session: AsyncSession | None = None,
     ) -> ModelType:
         db_session = db_session or self.db.session
-
         if isinstance(obj_new, dict):
             update_data = obj_new
         else:

@@ -31,7 +31,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_Role_id'), 'Role', ['id'], unique=False)
     op.add_column('User', sa.Column('role_id', sqlmodel.sql.sqltypes.GUID(), nullable=True))
-    op.create_foreign_key(None, 'User', 'Role', ['role_id'], ['id'])
+    op.create_foreign_key("User_role_id_fkey", 'User', 'Role', ['role_id'], ['id'])
     # ### end Alembic commands ###
 
 
