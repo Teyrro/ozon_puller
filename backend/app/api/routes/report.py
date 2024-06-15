@@ -15,7 +15,6 @@ from app.schemas.response_schema import (
     IGetResponsePaginated,
     create_response,
 )
-from app.schemas.role_schema import IRoleEnum
 
 report_router = APIRouter()
 
@@ -62,7 +61,7 @@ async def download_file(report_id: UUID) -> StreamingResponse:
 
 @report_router.post(
     "/list",
-    dependencies=[Depends(get_current_user([IRoleEnum.admin]))],
+    dependencies=[Depends(get_current_user())],
 )
 async def get_all_reports(
     params: Params = Depends(),

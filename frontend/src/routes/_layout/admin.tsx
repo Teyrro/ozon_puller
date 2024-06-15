@@ -108,27 +108,30 @@ const   MembersTableBody = () => {
                     </Tr>
                 ))
             ))
-          }
-            <Stack direction="row" spacing={4}>
-              <Button
-                // isLoading
+          }<Tr>
+            <Td>
+              <Stack direction="row" spacing={4}>
+                <Button
+                    // isLoading
 
-                variant="primary"
-                gap={1}
-                fontSize={{ base: "sm", md: "inherit" }}
-                onClick={() => fetchPreviousPage()}
-              >
-                Prev Page
-              </Button>
-                      <Button
-                variant="primary"
-                gap={1}
-                fontSize={{ base: "sm", md: "inherit" }}
-                onClick={() => fetchNextPage()}
-              >
-                Next Page
-              </Button>
-            </Stack>
+                    variant="primary"
+                    gap={1}
+                    fontSize={{ base: "sm", md: "inherit" }}
+                    onClick={() => fetchPreviousPage()}
+                >
+                  Prev Page
+                </Button>
+                <Button
+                    variant="primary"
+                    gap={1}
+                    fontSize={{ base: "sm", md: "inherit" }}
+                    onClick={() => fetchNextPage()}
+                >
+                  Next Page
+                </Button>
+              </Stack>
+            </Td>
+          </Tr>
         </Tbody>
 
 
