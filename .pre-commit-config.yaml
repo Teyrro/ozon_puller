@@ -8,15 +8,19 @@ repos:
         args:
           - --unsafe
       - id: end-of-file-fixer
+        exclude: ^frontend/src/client/.*
       - id: trailing-whitespace
+        exclude: ^frontend/src/client/.*
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.2.2
     hooks:
       - id: ruff
+        exclude: ^frontend/src/client/.*
         args:
           - --fix
       - id: ruff-format
+        exclude: ^frontend/src/client/.*
 
-#ci:
-#  autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
-#  autoupdate_commit_msg: ⬆ [pre-commit.ci] pre-commit autoupdate
+ci:
+  autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
+  autoupdate_commit_msg: ⬆ [pre-commit.ci] pre-commit autoupdate

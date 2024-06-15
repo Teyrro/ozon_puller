@@ -4,7 +4,6 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from backend.app.tests.utils.utils import get_superuser_token_headers
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -19,6 +18,7 @@ from app.db.session import SessionLocal
 from app.main import app
 from app.schemas.role_schema import IRoleEnum
 from app.tests.utils.user import authentication_token_from_email, create_random_user
+from app.tests.utils.utils import get_superuser_token_headers
 
 CLEAN_TABLES = [
     '"User"',

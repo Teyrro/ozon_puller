@@ -1,7 +1,7 @@
 """add relates users and ozon_confidential_data
 
 Revision ID: 0fa68411d496
-Revises: 
+Revises:
 Create Date: 2024-05-11 10:35:03.666729
 
 """

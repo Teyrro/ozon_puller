@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -25,7 +27,7 @@ class CRUDOzonReport(CRUDBase[OzonReport, IOzonReportCreate, IOzonReportUpdate])
     async def create_seller_report_for_all_users(
         self,
         *,
-        users: list[User],
+        users: Sequence[User],
         report: IOzonReportCreate,
         db_session: AsyncSession | None = None,
     ):

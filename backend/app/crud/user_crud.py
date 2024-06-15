@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from uuid import UUID
 
 from pydantic.networks import EmailStr
@@ -101,7 +102,9 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         if obj is not None:
             return obj.id
 
-    async def get_all_id(self, db_session: AsyncSession | None = None) -> list[User]:
+    async def get_all_id(
+        self, db_session: AsyncSession | None = None
+    ) -> Sequence[User]:
         db_session = db_session or self.db.session
         response = await db_session.execute(select(User))
         obj = response.scalars().all()

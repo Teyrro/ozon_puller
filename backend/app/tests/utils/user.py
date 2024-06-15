@@ -2,7 +2,6 @@ from collections.abc import Coroutine
 from typing import Any
 from uuid import UUID
 
-from backend.app.tests.utils.utils import random_email, random_lower_string
 from httpx import AsyncClient
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -10,6 +9,7 @@ from app import crud
 from app.db.session import SessionLocal
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
+from app.tests.utils.utils import random_email, random_lower_string
 
 
 async def user_authentication_headers(
