@@ -4,7 +4,7 @@ import sys
 from logging.config import fileConfig
 
 from dotenv import load_dotenv
-from sqlalchemy import pool, MetaData
+from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -13,7 +13,6 @@ from sqlmodel import SQLModel
 
 
 from app.core.config import settings
-from app.models import *
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 

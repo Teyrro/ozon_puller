@@ -170,7 +170,7 @@ async def get_user_list_order_by_created_at(
     return create_response(data=users, message="Users fetched successfully")
 
 
-@user_router.delete("/{user_id}", response_model=IDeleteResponseBase[IUserRead])
+@user_router.delete("/delete/{user_id}", response_model=IDeleteResponseBase[IUserRead])
 async def delete_user(
     user_id: UUID = Depends(user_deps.is_valid_user_id),
     current_user: User = Depends(
@@ -188,6 +188,21 @@ async def delete_user(
         raise UserSelfDeleteException()
 
     deleted_user = await user_service.delete(user_id)
+    return create_response(data=deleted_user, message="User deleted successfully")
+
+
+@user_router.delete(
+    "/me",
+    response_model=IDeleteResponseBase[IUserRead],
+)
+async def delete_user_me(
+    current_user: User = Depends(deps.get_current_user()),
+):
+    user_service = UserService(crud.user)
+    if current_user.role.name == IRoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Admin role can't be deleted")
+
+    deleted_user = await user_service.delete(user_id=current_user.id)
     return create_response(data=deleted_user, message="User deleted successfully")
 
 

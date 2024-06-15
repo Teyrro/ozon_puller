@@ -92,7 +92,7 @@ class UserService:
             )
         if updated_param.email:
             user = await self.crud.get_by_email(email=updated_param.email)
-            if user:
+            if user and user.id != target_user_id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail=f"User with email {updated_param.email} already exists",
