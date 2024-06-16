@@ -1,4 +1,3 @@
-import celery_typed_tasks
 from celery import Celery
 
 from app.core.config import settings
@@ -21,7 +20,6 @@ celery = Celery(
     broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
     backend=str(settings.SYNC_CELERY_DATABASE_URI),
     include="app.api.celery_task",  # route where tasks are defined
-    task_cls=celery_typed_tasks.TypedTask,
 )
 
 beat_max_loop_interval = 10

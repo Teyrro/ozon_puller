@@ -1,19 +1,31 @@
 volumes:
   app-db-data:
+  prometheus_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./prometheus_data
+  grafana_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./grafana_data
+
+
+
+networks:
+
+  fastapi-prom:
+  traefik-public:
+    # Allow setting it to false for testing
+    external: true
+
 
 services:
-  redis_server:
-    networks:
-      - traefik-public
-      - default
-    image: redis:alpine
-    container_name: redis_server
-    restart: always
-    expose:
-      - 6379
-    env_file: .env
-
   db:
+    container_name: db
     networks:
       - traefik-public
       - default
@@ -33,10 +45,23 @@ services:
     expose:
       - ${DATABASE_PORT}
 
-  backend:
+  redis_server:
+    container_name: redis
     networks:
       - traefik-public
       - default
+    image: redis:alpine
+    restart: always
+    expose:
+      - 6379
+    env_file: .env
+
+  backend:
+    container_name: backend
+    networks:
+      - traefik-public
+      - default
+      - fastapi-prom
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
     links:
@@ -81,6 +106,11 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-https.middlewares=${STACK_NAME?Variable not set}-www-redirect
 
+      # Prometheus
+#      :) i'm exhausted
+
+  #Celery
+######################################
   celery_worker:
     networks:
       - traefik-public
@@ -115,10 +145,32 @@ services:
       - db
       - redis_server
     env_file: .env
+####################################
+
+# Monitoring
+####################################
+  prometheus:
+    networks:
+      - fastapi-prom
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./backend/compose/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
 
 
+  grafana:
+    networks:
+      - fastapi-prom
+    image: grafana/grafana
+    container_name: my_grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
 
-networks:
-  traefik-public:
-    # Allow setting it to false for testing
-    external: true
+#########################################
