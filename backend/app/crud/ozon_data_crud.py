@@ -20,10 +20,11 @@ class CRUDOzonData(CRUDBase[OzonData, IOzonDataCreate, IOzonDataUpdate]):
         update_params = update_params.model_dump(exclude_unset=True)
         obj_out = obj_in.sqlmodel_update(update_params).copy()
         if update_params["api_key"]:
+            obj_out.api_key = update_params["api_key"]
             update_params["api_key"] = await security.get_data_encrypt(
                 update_params["api_key"]
             )
-        obj_in.sqlmodel_update(update_params)
+            obj_in.api_key = update_params["api_key"]
 
         db_session = db_session or self.db.session
         db_session.add(obj_in)
@@ -63,4 +64,4 @@ class CRUDOzonData(CRUDBase[OzonData, IOzonDataCreate, IOzonDataUpdate]):
         return obj_out
 
 
-ozon_data = CRUDOzonData(OzonData)
+ozon_data = CRUDOzonData(model=OzonData)

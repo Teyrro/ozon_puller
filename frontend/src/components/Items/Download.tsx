@@ -12,11 +12,11 @@ import React from "react"
 import { useForm } from "react-hook-form"
 
 import {OpenAPI} from "../../client"
-import useCustomToast from "../../hooks/useCustomToast"
-import { saveAs } from "file-saver";
+import useCustomToast from "../../hooks/useCustomToast.ts"
 import axios from "axios";
 import {getHeaders, getUrl} from "../../client/core/request.ts";
 import type {ApiRequestOptions} from "../../client/core/ApiRequestOptions.ts";
+import {saveAs} from "file-saver";
 
 
 
@@ -52,7 +52,6 @@ const reportDownloadFile = async (reportId: string) => {
     },
     headers: headers
   }).then((res) => {
-
       const content: string = res.headers["content-disposition"]
       const filename = content.substring(content.indexOf("=") + 1)
       saveAs(res.data, filename, {autoBom: true})

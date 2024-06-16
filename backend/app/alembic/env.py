@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from sqlmodel import SQLModel
 
-
 from app.core.config import settings
+from app.models import *
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 

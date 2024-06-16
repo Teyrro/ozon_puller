@@ -22,5 +22,6 @@ class OzonDataWithUserID(OzonDataBase):
 
 class OzonData(BaseUUIDModel, OzonDataWithUserID, table=True):
     user: "User" = Relationship(
-        back_populates="ozon_confidential", sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="ozon_confidential",
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )

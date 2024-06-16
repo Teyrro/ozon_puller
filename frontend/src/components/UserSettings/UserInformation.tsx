@@ -56,7 +56,7 @@ const UserInformation = () => {
     onSuccess: (data) => {
       showToast("Success!", "User updated successfully.", "success")
       queryClient.setQueryData(["currentUser"], data)
-      if (data?.data !== null && data?.data !== undefined) {
+      if (data?.data != null) {
         reset(data.data)
       }
     },

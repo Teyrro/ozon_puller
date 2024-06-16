@@ -19,16 +19,8 @@ def generate_metrics():
     asyncio.run(or_service.generate_metrics(delta=timedelta(days=14)))
 
 
-# @celery.task(
-#     name='task.print_hello'
-# )
-# def print_hello():
-#     logging.info("Hello World!")
-
-
 @celery.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # sender.add_periodic_task(1, print_hello.s(), name='task.print_hello')
     sender.add_periodic_task(
         crontab(hour="2", minute="0"),
         download_seller_reports.s(),
@@ -39,7 +31,3 @@ def setup_periodic_tasks(sender, **kwargs):
         generate_metrics.s(),
         name="every day at 2:20 AM, generate metrics",
     )
-    # sender.add_periodic_task(1.0, print_hello.s(), name="every 1 sec")
-
-
-#     sender.add_periodic_task(1.0, print_hello.s(), name="every 1 sec")
