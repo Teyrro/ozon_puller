@@ -1,3 +1,4 @@
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
@@ -13,10 +14,15 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
+sentry_sdk.init(
+    dsn="https://1390e288115dacca18dfb18c637adea9@o4507442072911872.ingest.de.sentry.io/4507442077368400",
+)
+
 app = FastAPI(
     title="OzonPuller",
     openapi_url=settings.API_V1_STR,
     generate_unique_id_function=custom_generate_unique_id,
+    debug=False,
 )
 
 app.add_middleware(

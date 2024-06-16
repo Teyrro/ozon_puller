@@ -34,9 +34,9 @@ celery = {extras = ["redis"], version = "^5.4.0"}
 redis = "^5.0.4"
 sqlalchemy-celery-beat = "^0.7.1"
 pyjwt = "^2.8.0"
-celery-typed-tasks = "^0.1.25"
 python-dotenv = "^1.0.1"
 cryptography = "^42.0.8"
+sentry-sdk = {extras = ["fastapi"], version = "^2.5.1"}
 
 
 
