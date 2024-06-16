@@ -52,7 +52,7 @@ class UserService:
         user = await self.crud.authenticate(
             email=current_user.email, password=body.current_password
         )
-        if not user:
+        if user is None:
             raise HTTPException(status_code=400, detail="Incorrect password")
         if body.current_password == body.new_password:
             raise HTTPException(

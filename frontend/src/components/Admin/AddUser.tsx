@@ -88,7 +88,6 @@ const AddUser = ({ isOpen, onClose }: AddUserProps) => {
   }
 
   const roles = message?.items.map((item) => (
-
       (
           item.name != "admin" && (
           <Radio key={item.id}

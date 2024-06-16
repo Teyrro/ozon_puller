@@ -28,7 +28,7 @@ app.add_middleware(
     SQLAlchemyMiddleware,
     db_url=str(settings.ASYNC_DATABASE_URI),
     engine_args={
-        "echo": False,
+        "echo": True,
         "poolclass": NullPool
         if settings.MODE == ModeEnum.testing
         else AsyncAdaptedQueuePool,

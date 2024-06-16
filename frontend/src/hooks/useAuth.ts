@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 
@@ -15,6 +15,7 @@ const isLoggedIn = () => {
 }
 
 const useAuth = () => {
+  const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const { data: user, isLoading } = useQuery<IGetResponseBase_IUserReadWithRole_, Error>({
@@ -27,7 +28,7 @@ const useAuth = () => {
   const {data: ozonData } = useQuery({
     queryKey: ["ozon_data"],
     queryFn: OzonDataService.ozonDataReadOzonDataMe,
-    enabled: user != null,
+    enabled: user?.data != null,
   })
 
   const login = async (data: AccessToken) => {
@@ -59,7 +60,9 @@ const useAuth = () => {
 
   const logout = () => {
     localStorage.removeItem("access_token")
+    queryClient.clear()
     navigate({ to: "/login" })
+
   }
 
   return {

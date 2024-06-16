@@ -15,7 +15,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { FiLogOut, FiMenu } from "react-icons/fi"
 
-import Logo from "/assets/images/OzonPullerGreen.svg"
+import Logo from "../../../public/assets/images/OzonPullerGreen.svg"
 import type {IGetResponseBase_IUserReadWithRole_} from "../../client"
 import useAuth from "../../hooks/useAuth"
 import SidebarItems from "./SidebarItems"

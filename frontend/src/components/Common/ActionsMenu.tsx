@@ -13,7 +13,7 @@ import EditUser from "../Admin/EditUser"
 import Delete from "./DeleteAlert"
 import {IOzonReportRead, IUserRead} from "../../client";
 import {DownloadIcon} from "@chakra-ui/icons";
-import Download from "./Download.tsx";
+import Download from "../Items/Download.tsx";
 
 interface ActionsMenuProps {
   type: string
@@ -75,14 +75,14 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
             )
         }
         {
-          type === "User" ?
+          type === "User" &&
               (
                   <EditUser
                       user={value as IUserRead}
                       isOpen={editUserModal.isOpen}
                       onClose={editUserModal.onClose}
                   />
-              ) : null
+              )
         }
         <Delete
           type={type}

@@ -64,7 +64,7 @@ const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
       showToast("Something went wrong.", `${errDetail}`, "error")
     },
     onSettled: () => {
-      queryClient.invalidateQueries({queryKey: ["users"]}).then((r) => (r))
+      queryClient.invalidateQueries({queryKey: ["users"]})
      },
   })
 
@@ -114,7 +114,7 @@ const EditUser = ({ user, isOpen, onClose }: EditUserProps) => {
             </FormControl>
             <FormControl mt={4}>
               <FormLabel htmlFor="surname">Surname</FormLabel>
-              <Input id="name" {...register("surname")} type="text" />
+              <Input id="surname" {...register("surname")} type="text" />
             </FormControl>
             <FormControl mt={4} isInvalid={!!errors.password}>
               <FormLabel htmlFor="password">Set Password</FormLabel>

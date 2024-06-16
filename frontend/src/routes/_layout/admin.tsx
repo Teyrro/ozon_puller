@@ -43,7 +43,7 @@ const   MembersTableBody = () => {
   const {
     fetchNextPage,
     fetchPreviousPage,
-    data: message,
+    data: pages,
 
   } = useSuspenseInfiniteQuery<IGetResponsePaginated_IUserReadWithRole_>({
     queryKey: ["users"],
@@ -70,8 +70,8 @@ const   MembersTableBody = () => {
   return (
         <Tbody>
           {
-            message.pages.map((pages) => (
-                pages.items.map( (user) => (
+            pages.pages.map((page) => (
+                page.items.map( (user) => (
                     <Tr key={user.id}>
                       <Td color={!user.name ? "ui.dim" : "inherit"}>
                         {user.name || "N/A"}
@@ -108,27 +108,30 @@ const   MembersTableBody = () => {
                     </Tr>
                 ))
             ))
-          }
-            <Stack direction="row" spacing={4}>
-              <Button
-                // isLoading
+          }<Tr>
+            <Td>
+              <Stack direction="row" spacing={4}>
+                <Button
+                    // isLoading
 
-                variant="primary"
-                gap={1}
-                fontSize={{ base: "sm", md: "inherit" }}
-                onClick={() => fetchPreviousPage()}
-              >
-                Prev Page
-              </Button>
-                      <Button
-                variant="primary"
-                gap={1}
-                fontSize={{ base: "sm", md: "inherit" }}
-                onClick={() => fetchNextPage()}
-              >
-                Next Page
-              </Button>
-            </Stack>
+                    variant="primary"
+                    gap={1}
+                    fontSize={{ base: "sm", md: "inherit" }}
+                    onClick={() => fetchPreviousPage()}
+                >
+                  Prev Page
+                </Button>
+                <Button
+                    variant="primary"
+                    gap={1}
+                    fontSize={{ base: "sm", md: "inherit" }}
+                    onClick={() => fetchNextPage()}
+                >
+                  Next Page
+                </Button>
+              </Stack>
+            </Td>
+          </Tr>
         </Tbody>
 
 

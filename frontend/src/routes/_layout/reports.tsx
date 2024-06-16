@@ -52,46 +52,48 @@ function ItemsTableBody() {
   })
 
   return (
-    <>
-        <Tbody>
-          {message.pages.map((items) => (
-              items.items.map((item) => (
-                <Tr key={item.id}>
-                  <Td>{item.id}</Td>
-                  <Td>{item.report_type}</Td>
-                  <Td color={!item.ozon_created_at ? "ui.dim" : "inherit"}>
-                    {item.ozon_created_at || "N/A"}
-                  </Td>
-                  <Td>
-                    <ActionsMenu type={"Item"} value={item} />
-                  </Td>
-                </Tr>
-              ))
-          ))}
-        </Tbody>
-          <Stack direction="row" spacing={4}>
-                <Button
-                  // isLoading
+    <Tbody>
+      {message.pages.map((items) => (
+          items.items.map((item) => (
+            <Tr key={item.id}>
+              <Td>{item.id}</Td>
+              <Td>{item.report_type}</Td>
+              <Td color={!item.ozon_created_at ? "ui.dim" : "inherit"}>
+                {item.ozon_created_at || "N/A"}
+              </Td>
+              <Td>
+                <ActionsMenu type={"Item"} value={item} />
+              </Td>
+            </Tr>
+          ))
+      ))}
+        <Tr>
+            <Td>
+                <Stack direction="row" spacing={4}>
+                    <Button
+                        // isLoading
 
-                  variant="primary"
-                  gap={1}
-                  fontSize={{ base: "sm", md: "inherit" }}
-                  loadingText="Processing"
-                  onClick={() => fetchPreviousPage()}
-                >
-                  Prev Page
-                </Button>
-              <Button
-              variant="primary"
-              gap={1}
-              fontSize={{ base: "sm", md: "inherit" }}
-              loadingText="Processing"
-              onClick={() => fetchNextPage()}
-            >
-                Next Page
-            </Button>
-      </Stack>
-    </>
+                        variant="primary"
+                        gap={1}
+                        fontSize={{ base: "sm", md: "inherit" }}
+                        loadingText="Processing"
+                        onClick={() => fetchPreviousPage()}
+                    >
+                        Prev Page
+                    </Button>
+                    <Button
+                        variant="primary"
+                        gap={1}
+                        fontSize={{ base: "sm", md: "inherit" }}
+                        loadingText="Processing"
+                        onClick={() => fetchNextPage()}
+                    >
+                        Next Page
+                    </Button>
+                </Stack>
+            </Td>
+        </Tr>
+    </Tbody>
   )
 }
 function ItemsTable() {

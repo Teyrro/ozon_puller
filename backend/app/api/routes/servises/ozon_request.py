@@ -268,8 +268,10 @@ class OzonRequestService:
         sku_avg = (
             metrics_sheet.select(*spark_cols)
             .with_columns(
-                sku_series.alias("sku"),
                 pl.mean_horizontal(pl.all()).alias("avg"),
+            )
+            .with_columns(
+                sku_series.alias("sku"),
             )
             .select("sku", "avg")
             .group_by("sku")
@@ -328,7 +330,7 @@ class OzonRequestService:
 
     async def save_dataframes(
         self,
-        nms_dfs,
+        nms_dfs: list[tuple[str, DataFrame]],
         is_update: bool = False,
         add_sparks: bool = False,
     ):
@@ -473,8 +475,11 @@ class OzonRequestService:
         stock.sort(stock.columns[1])
         metrics.sort(metrics.columns[0])
         ho.sort(ho.columns[0])
+        # for sparks need more than current metrics info
+        add_sparks = len(ho.columns) > 2
         names_dfs = list(zip(self.sheets, [hb, metrics, ho, stock], strict=False))
-        await self.save_dataframes(names_dfs, False, True)
+
+        await self.save_dataframes(names_dfs, False, add_sparks)
 
     async def generate_metrics(
         self,

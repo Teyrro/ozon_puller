@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.exc import IntegrityError
 from starlette import status
 
 from app import crud
-from app.api.deps import UserAuthDep, get_current_user
+from app.api.deps import UserAuthDep
 from app.schemas.ozon_data_schema import IOzonDataCreate, IOzonDataRead, IOzonDataUpdate
 from app.schemas.response_schema import (
     IDeleteResponseBase,
@@ -13,20 +13,27 @@ from app.schemas.response_schema import (
     IPostResponseBase,
     create_response,
 )
+from app.schemas.role_schema import IRoleEnum
 
 ozon_data_router = APIRouter()
 
 
 @ozon_data_router.delete(
     "/{ozon_data_id}",
-    dependencies=[Depends(get_current_user())],
 )
-async def remove_ozon_data(ozon_data_id: UUID) -> IDeleteResponseBase[IOzonDataRead]:
+async def remove_ozon_data(
+    ozon_data_id: UUID, current_user: UserAuthDep
+) -> IDeleteResponseBase[IOzonDataRead]:
     current_ozon_data = await crud.ozon_data.get(id=ozon_data_id)
-    if not current_ozon_data:
+    if current_ozon_data is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Ozon Credentials does not exist",
+        )
+    if current_user.role.name == IRoleEnum.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin can't remove ozon credentials.",
         )
     removed_ozon_data = await crud.ozon_data.remove(id=ozon_data_id)
     return create_response(removed_ozon_data, message="Ozon Credentials removed")
@@ -38,9 +45,9 @@ async def create_ozon_data(
 ) -> IPostResponseBase[IOzonDataRead]:
     try:
         current_ozon_data = await crud.ozon_data.get_by_user_id(id=current_user.id)
-        if not current_ozon_data:
+        if current_ozon_data:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Ozon Credentials already exists",
             )
         ozon_data_out = await crud.ozon_data.create_credentials(
@@ -58,14 +65,14 @@ async def create_ozon_data(
 async def update_ozon_data_me(
     update_params: IOzonDataUpdate, current_user: UserAuthDep
 ) -> IGetResponseBase[IOzonDataRead]:
-    current_ozon_data = await crud.ozon_data.get_by_user_id(id=current_user.id)
-    if not current_ozon_data:
+    current_ozon_data = current_user.ozon_confidential
+    if current_ozon_data is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Ozon Credentials does not exist",
         )
     updated_ozon_data = await crud.ozon_data.update_credentials(
-        update_params=update_params, obj_in=current_ozon_data
+        obj_in=current_ozon_data, update_params=update_params
     )
     return create_response(data=updated_ozon_data, message="Ozon Credentials updated")
 
