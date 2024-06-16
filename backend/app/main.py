@@ -1,17 +1,16 @@
 import sentry_sdk
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 from fastapi_pagination import add_pagination
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import AsyncAdaptedQueuePool, NullPool
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import main_api_router
 from app.core.config import ModeEnum, settings
 
-
-def custom_generate_unique_id(route: APIRoute) -> str:
-    return f"{route.tags[0]}-{route.name}"
+# def custom_generate_unique_id(route: APIRoute) -> str:
+#     return f"{route.tags[0]}-{route.name}"
 
 
 sentry_sdk.init(
@@ -21,7 +20,7 @@ sentry_sdk.init(
 app = FastAPI(
     title="OzonPuller",
     openapi_url=settings.API_V1_STR,
-    generate_unique_id_function=custom_generate_unique_id,
+    # generate_unique_id_function=custom_generate_unique_id,
     debug=False,
 )
 
@@ -35,6 +34,8 @@ app.add_middleware(
         else AsyncAdaptedQueuePool,
     },
 )
+
+Instrumentator().instrument(app).expose(app)
 
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
