@@ -22,7 +22,7 @@ report_router = APIRouter()
 @report_router.delete("/{report_id}", dependencies=[Depends(get_current_user())])
 async def remove_report(report_id: UUID) -> IDeleteResponseBase[IOzonReportRead]:
     report = crud.ozon_report.get(id=report_id)
-    if not report:
+    if report is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report doesn't exist",
@@ -34,7 +34,7 @@ async def remove_report(report_id: UUID) -> IDeleteResponseBase[IOzonReportRead]
 @report_router.post("/download/{report_id}", dependencies=[Depends(get_current_user())])
 async def download_file(report_id: UUID) -> StreamingResponse:
     report = await crud.ozon_report.get(id=report_id)
-    if not report:
+    if report is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found",
@@ -67,7 +67,7 @@ async def get_all_reports(
     params: Params = Depends(),
 ) -> IGetResponsePaginated[IOzonReportRead]:
     reports = await crud.ozon_report.get_multi_paginated(params=params)
-    if not reports:
+    if reports is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reports not found",

@@ -54,6 +54,8 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         if obj_in.password is not None:
             hashed_pswd = {"hashed_password": get_password_hash(obj_in.password)}
             user.sqlmodel_update(obj_in_data, update=hashed_pswd)
+        else:
+            user.sqlmodel_update(obj_in_data)
         db_session = db_session or self.db.session
         db_session.add(user)
         await db_session.commit()

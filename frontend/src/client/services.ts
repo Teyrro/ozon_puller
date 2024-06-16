@@ -103,6 +103,7 @@ export class UserService {
 
 	/**
 	 * Create User
+	 * Create User
  * 
  * Required roles:
  * - admin
@@ -170,6 +171,7 @@ requestBody,
 	}
 
 	/**
+	 * Read User By Id
 	 * Get user by id
  * 
  * Required roles:
@@ -510,6 +512,7 @@ requestBody,
 	}
 
 	/**
+	 * Get Role By Id
 	 * Gets a role by its id
 	 * @returns IGetResponseBase_IRoleRead_ Successful Response
 	 * @throws ApiError

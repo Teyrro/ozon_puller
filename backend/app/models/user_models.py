@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from pydantic import EmailStr
-from sqlalchemy.orm import relationship
 from sqlmodel import AutoString, Field, Relationship, SQLModel
 
 from app.models.base_uuid_model import BaseUUIDModel
@@ -26,16 +25,15 @@ class User(BaseUUIDModel, UserBase, table=True):
     hashed_password: str | None = Field(nullable=False, index=True, default=None)
     role: Optional["Role"] = Relationship(
         back_populates="user",
-        sa_relationship_kwargs={"lazy": "joined", "uselist": True},
+        sa_relationship_kwargs={"lazy": "joined", "uselist": False},
     )
 
     ozon_confidential: Optional["OzonData"] = Relationship(
-        sa_relationship=relationship(
-            back_populates="user",
-            cascade="all, delete-orphan",
-            lazy="joined",
-            single_parent=True,
-        )
+        sa_relationship_kwargs={
+            "back_populates": "user",
+            "cascade": "all, delete, delete-orphan",
+            "lazy": "joined",
+        }
     )
     ozon_reports: list["OzonReport"] = Relationship(
         back_populates="user",
