@@ -1,20 +1,22 @@
 from datetime import datetime, timedelta
 from typing import Any
 
+import jwt
 from cryptography import fernet
-from jose import jwt
 from passlib.context import CryptContext
-from pydantic import EmailStr
 
 from app.core.config import settings
+from app.schemas.base_schema import TokenType
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 fernet = fernet.Fernet(settings.SECRET_KEY.encode())
 
 
-def create_access_token(
-    subject: EmailStr | Any, expires_delta: timedelta = None
+async def create_access_token(
+    subject: str | Any,
+    token_type: TokenType,
+    expires_delta: timedelta = None,
 ) -> str:
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -22,11 +24,11 @@ def create_access_token(
         expire = datetime.utcnow() + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    to_encode = {"exp": expire, "sub": str(subject), "type": token_type}
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def decode_token(token: str) -> dict[str, Any]:
+async def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(
         token,
         key=settings.SECRET_KEY,
@@ -34,11 +36,11 @@ def decode_token(token: str) -> dict[str, Any]:
     )
 
 
-def verify_password(plain_password, hashed_password):
+async def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_password_hash(password):
+async def get_password_hash(password):
     return pwd_context.hash(password)
 
 

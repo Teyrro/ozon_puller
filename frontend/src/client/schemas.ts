@@ -562,6 +562,16 @@ export const $IOzonReportRead = {
 	isRequired: true,
 	format: 'uuid',
 },
+		created_at: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+	format: 'date-time',
+}, {
+	type: 'null',
+}],
+	isRequired: true,
+},
 	},
 } as const;
 
@@ -1066,6 +1076,14 @@ export const $PartialIUserUpdate = {
 }],
 },
 		password: {
+	type: 'any-of',
+	contains: [{
+	type: 'string',
+}, {
+	type: 'null',
+}],
+},
+		role: {
 	type: 'any-of',
 	contains: [{
 	type: 'string',

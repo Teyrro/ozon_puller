@@ -7,6 +7,7 @@ from starlette import status
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.crud.user_crud import CRUDUser
+from app.schemas.base_schema import TokenType
 from app.schemas.token_schema import Token
 
 
@@ -31,7 +32,8 @@ class LoginService:
             )
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         return Token(
-            access_token=create_access_token(
-                user.id, expires_delta=access_token_expires
-            )
+            access_token=await create_access_token(
+                user.id, token_type=TokenType.ACCESS, expires_delta=access_token_expires
+            ),
+            token_type="bearer",
         )

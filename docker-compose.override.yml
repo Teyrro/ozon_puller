@@ -47,15 +47,15 @@ services:
       - "5432:5432"
 
 
-  backend:
-    restart: "no"
-    ports:
-      - 8888:8888
-    build:
-      args:
-        INSTALL_DEV: ${INSTALL_DEV-true}
-#    command: sleep infinity  # Infinite loop to keep container alive doing nothing
-    command: /start-reload.sh
+#  backend:
+#    restart: "no"
+#    ports:
+#      - 8888:80
+#    build:
+#      args:
+#        INSTALL_DEV: ${INSTALL_DEV-true}
+##    command: sleep infinity  # Infinite loop to keep container alive doing nothing
+#    command: /start-reload.sh
 #
 #  frontend:
 #    restart: "no"

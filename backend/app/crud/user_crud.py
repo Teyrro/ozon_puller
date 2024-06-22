@@ -20,8 +20,10 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         users = await db_session.execute(select(User).where(User.email == email))
         return users.scalar_one_or_none()
 
-    async def get_by_id_active(self, *, id: UUID) -> User | None:
-        user = await self.get(id=id)
+    async def get_by_id_active(
+        self, *, id: UUID, db_session: AsyncSession | None = None
+    ) -> User | None:
+        user = await self.get(id=id, db_session=db_session)
         if not user:
             return None
         if user.is_active is False:
@@ -52,7 +54,7 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
     ) -> User:
         obj_in_data = obj_in.model_dump(exclude_unset=True)
         if obj_in.password is not None:
-            hashed_pswd = {"hashed_password": get_password_hash(obj_in.password)}
+            hashed_pswd = {"hashed_password": await get_password_hash(obj_in.password)}
             user.sqlmodel_update(obj_in_data, update=hashed_pswd)
         else:
             user.sqlmodel_update(obj_in_data)
@@ -67,23 +69,26 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
     ) -> User:
         db_session = db_session or self.db.session
         db_obj = User.model_validate(obj_in)
-        db_obj.hashed_password = get_password_hash(obj_in.password)
+        db_obj.hashed_password = await get_password_hash(obj_in.password)
         db_session.add(db_obj)
         await db_session.commit()
         await db_session.refresh(db_obj)
         return db_obj
 
-    async def authenticate(self, *, email: EmailStr, password: str) -> User | None:
-        user = await self.get_by_email(email=email)
+    async def authenticate(
+        self, *, email: EmailStr, password: str, db_session: AsyncSession | None = None
+    ) -> User | None:
+        db_session = db_session or self.db.session
+        user = await self.get_by_email(email=email, db_session=db_session)
         if not user:
             return None
-        if not verify_password(password, user.hashed_password):
+        if not await verify_password(password, user.hashed_password):
             return None
         return user
 
     async def remove(
         self, *, id: UUID | str, db_session: AsyncSession | None = None
-    ) -> User:
+    ) -> User | None:
         db_session = db_session or self.db.session
         response = await db_session.execute(
             select(self.model).where(self.model.id == id)

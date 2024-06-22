@@ -115,15 +115,14 @@ class OzonRequestService:
 
     async def download_reports(self):
         async with get_db() as session:
-            # need for get ozon api-key, it's and system, and user
-            admin_id = await self.u_crud.get_admin_id(db_session=session)
-
-            req_sema = asyncio.Semaphore(value=20)
             last_report_date = await self.or_crud.get_last_item_by_created_at(
                 db_session=session
             )
             users = await self.u_crud.get_all_id(db_session=session)
 
+            # need for get ozon api-key, it's and system, and user
+            admin_id = await self.u_crud.get_admin_id(db_session=session)
+            req_sema = asyncio.Semaphore(value=20)
             async for reports in self._get_reports(admin_id):
                 download_futures = [
                     self._download_report(report, last_report_date, req_sema)
@@ -210,16 +209,21 @@ class OzonRequestService:
                     headers=self.headers,
                     data=body.json(),
                 )
-                if 200 <= response.status <= 300:
+                if (
+                    status.HTTP_200_OK
+                    <= response.status
+                    <= status.HTTP_300_MULTIPLE_CHOICES
+                ):
                     result = await response.json()
                     metrics = OzonGetMetrixResp.model_validate(result).result
-                elif response.status == 429:
+                elif response.status == status.HTTP_429_TOO_MANY_REQUESTS:
+                    logger.info("Too many requests, start waiting process on 61 second")
                     delay_for_next_request = 61
                     sleep(delay_for_next_request)
                 else:
                     logger.info(offset)
                     raise Exception(response.status)
-                if metrics.data:
+                if metrics and metrics.data:
                     offset += limit
                 else:
                     break
@@ -252,19 +256,9 @@ class OzonRequestService:
         await self.save_dataframes(names_sheets)
 
     @staticmethod
-    def add_sparklines(
-        sheet_writer: Worksheet,
-        sheet_from: tuple[str, DataFrame],
-        sheet_to: tuple[str, DataFrame],
-    ):
-        metrix_name, metrics_sheet = sheet_from
-        length = len(metrics_sheet.columns)
-        last_letter = xl_col_to_name(length - 1)
-        if length > 5:
-            spark_cols = metrics_sheet.columns[-6:-1]
-        else:
-            spark_cols = metrics_sheet.columns[1:-1]
-        sku_series = metrics_sheet.select(pl.selectors.by_index(0)).to_series()
+    async def get_sku_14_days_and_avg_columns(
+        metrics_sheet, spark_cols, sku_series, sheet_to
+    ) -> DataFrame:
         sku_avg = (
             metrics_sheet.select(*spark_cols)
             .with_columns(
@@ -293,8 +287,25 @@ class OzonRequestService:
             .fill_null(0)
             .fill_nan(0)
         )
-        sku_14_days_avg.sort(sku_14_days_avg.columns[0])
+        return sku_14_days_avg.sort(sku_14_days_avg.columns[0])
 
+    async def add_sparklines(
+        self,
+        sheet_writer: Worksheet,
+        sheet_from: tuple[str, DataFrame],
+        sheet_to: tuple[str, DataFrame],
+    ):
+        metrix_name, metrics_sheet = sheet_from
+        length = len(metrics_sheet.columns)
+        last_letter = xl_col_to_name(length - 1)
+        if length > 5:
+            spark_cols = metrics_sheet.columns[-6:-1]
+        else:
+            spark_cols = metrics_sheet.columns[1:-1]
+        sku_series = metrics_sheet.select(pl.selectors.by_index(0)).to_series()
+        sku_14_days_avg = await self.get_sku_14_days_and_avg_columns(
+            metrics_sheet, spark_cols, sku_series, sheet_to
+        )
         rows, cols = sheet_to[1].shape
         for ind_row, orders_14_d_and_avg in enumerate(sku_14_days_avg.rows(), 1):
             if orders_14_d_and_avg[1] > orders_14_d_and_avg[2]:
@@ -322,7 +333,7 @@ class OzonRequestService:
             if add_sparks and name == self.sheets[3]:
                 sheet_from = nms_sh[2]
                 sheet_writer = wb.add_worksheet(name)
-                self.add_sparklines(sheet_writer, sheet_from, (name, sheet))
+                await self.add_sparklines(sheet_writer, sheet_from, (name, sheet))
 
             sheet.write_excel(wb, worksheet=name, autofit=True, autofilter=True)
         wb.close()
@@ -380,7 +391,7 @@ class OzonRequestService:
                 .with_columns(
                     pl.col(stock_curr_col_name).fill_null(pl.col(metrics_curr_col_name))
                 )
-                .drop(sku_metrics, metrics_curr_col_name)
+                .drop(metrics_curr_col_name)
             )
         stock = stock.with_columns(
             pl.col(stock.columns[5]).fill_null(pl.col(stock.columns[4]) / delta.days),
@@ -398,8 +409,7 @@ class OzonRequestService:
             .otherwise(pl.col(pl.Float64))
             .keep_name()
         )
-
-        stock.select(pl.last())
+        stock.group_by(stock.columns[1])
         return stock
 
     async def pull_reports_from_db(self, delta: timedelta = None):
@@ -429,10 +439,10 @@ class OzonRequestService:
                 how="inner",
                 other=sku_product_id_col,
             )
-            .drop(sku_col)
-            .rename({sku_product_id_col.columns[0]: sku_col})
-        )
-        return metrics.select(pl.nth([3, 0, 1, 2]))
+        ).drop(sku_col)
+        metrics = metrics.select(pl.nth([3, 0, 1, 2]))
+
+        return metrics.group_by(metrics.columns[0]).agg(pl.selectors.numeric().sum())
 
     async def _fill_data_metrics(self, date_from, date_to, delta: timedelta = None):
         delta, o_report, report = await self.pull_reports_from_db(delta)
@@ -448,10 +458,8 @@ class OzonRequestService:
         )
 
         metrics = await self.prepare_metrics(metrics, hb)
-        metrics = metrics.group_by(metrics.columns[0]).agg(pl.selectors.numeric().sum())
 
         stock = await self.fill_stock(stock, metrics, delta)
-        stock.group_by(stock.columns[1])
 
         delta_by_days = (
             stock.select(pl.selectors.by_index(1, 4))

@@ -63,7 +63,7 @@ async def create_user(
         if role is None:
             raise IdNotFoundException(Role, id=user_in.role_id)
         if role.name == IRoleEnum.admin:
-            raise OnlyOneAdminUserException(Role, name=role.name)
+            raise OnlyOneAdminUserException(Role, id=user_in.role_id)
         user_service = UserService(crud.user)
         user = await user_service.create(user_in)
         return create_response(data=user)

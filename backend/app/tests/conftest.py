@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import AsyncGenerator, Coroutine
 from typing import Any
 
@@ -17,25 +16,19 @@ from app.core.init_db import init_db
 from app.db.session import SessionLocal
 from app.main import app
 from app.schemas.role_schema import IRoleEnum
-from app.tests.utils.user import authentication_token_from_email, create_random_user
+from app.tests.utils.user import (
+    authentication_token_from_email,
+    create_random_user,
+)
 from app.tests.utils.utils import get_superuser_token_headers
 
-CLEAN_TABLES = [
-    '"User"',
-]
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+CLEAN_TABLES = ['"User"', '"Role"', '"OzonReport"', '"OzonData"']
 
 
 @pytest.fixture(scope="session")
 async def async_engine():
     engine = create_async_engine(
-        str(settings.ASYNC_DATABASE_URI), future=True, echo=True
+        str(settings.ASYNC_DATABASE_URI), future=True, echo=False
     )
     async_session = async_sessionmaker(
         engine, expire_on_commit=False, class_=AsyncSession
@@ -46,7 +39,7 @@ async def async_engine():
 @pytest.fixture(scope="function")
 async def async_session_test():
     engine = create_async_engine(
-        str(settings.ASYNC_DATABASE_URI), future=True, echo=True
+        str(settings.ASYNC_DATABASE_URI), future=True, echo=False
     )
     async_session = async_sessionmaker(
         engine, expire_on_commit=False, class_=AsyncSession

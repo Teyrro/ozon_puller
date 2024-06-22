@@ -23,6 +23,7 @@ from app.utils.exceptions.common_exceptions import (
 role_router = APIRouter()
 
 
+# TODO Should change router path
 @role_router.get(
     "",
     response_model=IGetResponsePaginated[IRoleRead],
