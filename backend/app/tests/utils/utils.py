@@ -4,6 +4,7 @@ import string
 from httpx import AsyncClient
 
 from app.core.config import settings
+from app.utils.getURL import getURL
 
 
 def random_lower_string() -> str:
@@ -19,7 +20,8 @@ async def get_superuser_token_headers(client: AsyncClient) -> dict[str, str]:
         "username": settings.FIRST_SUPERUSER_EMAIL,
         "password": settings.FIRST_SUPERUSER_PASSWORD,
     }
-    r = await client.post("/login/access-token", data=login_data)
+    url = await getURL("/login/access-token")
+    r = await client.post(url, data=login_data)
     tokens = r.json()
     print(tokens)
     a_token = tokens["access_token"]

@@ -58,6 +58,7 @@ class IUserReadWithRole(IUserRead):
 @partial_model
 class IUserUpdate(UserBase):
     password: str
+    role: str
 
 
 class IUserUpdateMe(NameSurnameValidator, BaseModel):

@@ -122,6 +122,7 @@ export type IOzonReportRead = {
 	report_type: string;
 	ozon_created_at: string | null;
 	id: string;
+	created_at: string | null;
 };
 
 
@@ -269,6 +270,7 @@ export type PartialIUserUpdate = {
 	is_active?: boolean | null;
 	role_id?: string | null;
 	password?: string | null;
+	role?: string | null;
 };
 
 

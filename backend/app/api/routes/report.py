@@ -21,7 +21,7 @@ report_router = APIRouter()
 
 @report_router.delete("/{report_id}", dependencies=[Depends(get_current_user())])
 async def remove_report(report_id: UUID) -> IDeleteResponseBase[IOzonReportRead]:
-    report = crud.ozon_report.get(id=report_id)
+    report = await crud.ozon_report.get(id=report_id)
     if report is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -39,6 +39,7 @@ async def download_file(report_id: UUID) -> StreamingResponse:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found",
         )
+    # TODO Should add new column in database with file extension
     filename = media_type = stream = None
     if report.report_type == ReportType.seller_products.lower():
         stream = BytesIO(report.report)

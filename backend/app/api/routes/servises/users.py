@@ -59,7 +59,7 @@ class UserService:
                 status_code=400,
                 detail="New password cannot be the same as the current one",
             )
-        hashed_password = get_password_hash(body.new_password)
+        hashed_password = await get_password_hash(body.new_password)
         new_data = current_user.model_copy()
         new_data.hashed_password = hashed_password
         await self.crud.update(obj_current=current_user, obj_new=new_data)
@@ -69,7 +69,7 @@ class UserService:
         updated_param: IUserUpdateMe | dict[str, Any],
         current_user: User,
     ) -> User | None:
-        if updated_param.dict(exclude_none=True) == {}:
+        if updated_param.model_dump(exclude_none=True) == {}:
             raise HTTPException(
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="At least one parameter for user update info should be provided",
@@ -85,7 +85,7 @@ class UserService:
         target_user_id: UUID,
         updated_param: IUserUpdate | dict[str, Any],
     ) -> User | None:
-        if updated_param.dict(exclude_none=True) == {}:
+        if updated_param.model_dump(exclude_none=True) == {}:
             raise HTTPException(
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="At least one parameter for user update info should be provided",

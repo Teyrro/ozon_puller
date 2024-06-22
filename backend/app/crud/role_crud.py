@@ -16,13 +16,15 @@ class CRUDRole(CRUDBase[Role, IRoleCreate, IRoleUpdate]):
         role = await db_session.execute(select(Role).where(Role.name == name))
         return role.scalar_one_or_none()
 
-    async def add_role_to_user(self, *, user: User, role_id: UUID) -> Role:
-        db_session = self.db.session
-        role = await self.get(id=role_id)
-        role.users.append(user)
-        db_session.add(role)
+    async def add_role_to_user(
+        self, *, user: User, role_id: UUID, db_session: AsyncSession | None = None
+    ) -> Role:
+        db_session = db_session or self.db.session
+        role = await self.get(id=role_id, db_session=db_session)
+        user.role = role
+        db_session.add(user)
         await db_session.commit()
-        await db_session.refresh(role)
+        await db_session.refresh(user)
         return role
 
 

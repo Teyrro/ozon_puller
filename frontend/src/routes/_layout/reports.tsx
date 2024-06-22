@@ -56,10 +56,12 @@ function ItemsTableBody() {
       {message.pages.map((items) => (
           items.items.map((item) => (
             <Tr key={item.id}>
-              <Td>{item.id}</Td>
               <Td>{item.report_type}</Td>
               <Td color={!item.ozon_created_at ? "ui.dim" : "inherit"}>
                 {item.ozon_created_at || "N/A"}
+              </Td>
+              <Td color={!item.created_at ? "ui.dim" : "inherit"}>
+                  {item.created_at}
               </Td>
               <Td>
                 <ActionsMenu type={"Item"} value={item} />
@@ -102,9 +104,9 @@ function ItemsTable() {
       <Table size={{ base: "sm", md: "md" }}>
         <Thead>
           <Tr>
-            <Th>ID</Th>
-            <Th>Title</Th>
-            <Th>Ozon created at</Th>
+            <Th>Report Type</Th>
+            <Th>Ozon Created At</Th>
+            <Th>Created At</Th>
             <Th>Actions</Th>
           </Tr>
         </Thead>

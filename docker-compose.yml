@@ -1,22 +1,7 @@
 volumes:
   app-db-data:
-  prometheus_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./prometheus_data
-  grafana_data:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ./grafana_data
-
-
 
 networks:
-
   fastapi-prom:
   traefik-public:
     # Allow setting it to false for testing
@@ -24,6 +9,17 @@ networks:
 
 
 services:
+  redis_server:
+    container_name: redis
+    networks:
+      - traefik-public
+      - default
+    image: redis:alpine
+    restart: always
+    ports:
+      - 6379:6379
+    env_file: .env
+
   db:
     container_name: db
     networks:
@@ -45,17 +41,6 @@ services:
     expose:
       - ${DATABASE_PORT}
 
-  redis_server:
-    container_name: redis
-    networks:
-      - traefik-public
-      - default
-    image: redis:alpine
-    restart: always
-    expose:
-      - 6379
-    env_file: .env
-
   backend:
     container_name: backend
     networks:
@@ -64,6 +49,8 @@ services:
       - fastapi-prom
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
+    ports:
+      - 8000:80
     links:
       - db:database
     depends_on:
@@ -139,38 +126,10 @@ services:
       dockerfile: ./compose/backend/Dockerfile
       args:
         INSTALL_DEV: ${INSTALL_DEV-false}
-    command: celery -A app.core.celery beat -l info -S sqlalchemy
+    command: ./init_celery_beat.sh
     depends_on:
       - celery_worker
       - db
       - redis_server
     env_file: .env
 ####################################
-
-# Monitoring
-####################################
-  prometheus:
-    networks:
-      - fastapi-prom
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - 9090:9090
-    volumes:
-      - ./backend/compose/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-
-
-  grafana:
-    networks:
-      - fastapi-prom
-    image: grafana/grafana
-    container_name: my_grafana
-    ports:
-      - 3000:3000
-    volumes:
-      - grafana_data:/var/lib/grafana
-
-#########################################

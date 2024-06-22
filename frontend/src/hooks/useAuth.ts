@@ -9,9 +9,19 @@ import {
   LoginService,
   UserService, IGetResponseBase_IUserReadWithRole_, OzonDataService
 } from "../client"
+import {jwtDecode} from "jwt-decode";
 
 const isLoggedIn = () => {
-  return localStorage.getItem("access_token") !== null
+  const token = localStorage.getItem("access_token")
+  if (token !== null) {
+    const decode = jwtDecode(token)
+    if (decode?.exp && decode.exp * 1000 < Date.now()) {
+      localStorage.removeItem("access_token")
+      return false
+    }
+    return true
+  }
+  return false
 }
 
 const useAuth = () => {

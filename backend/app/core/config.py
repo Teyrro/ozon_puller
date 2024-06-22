@@ -68,6 +68,7 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: str
+    REDIS_NUMBER: str
 
     DATABASE_USER: str
     DATABASE_PASSWORD: str

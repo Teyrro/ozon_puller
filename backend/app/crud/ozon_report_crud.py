@@ -30,16 +30,17 @@ class CRUDOzonReport(CRUDBase[OzonReport, IOzonReportCreate, IOzonReportUpdate])
         users: Sequence[User],
         report: IOzonReportCreate,
         db_session: AsyncSession | None = None,
-    ):
+    ) -> OzonReport:
         session = db_session or self.db.session
         report = OzonReport.model_validate(report)
         report.user = users
         session.add(report)
         await session.commit()
+        return report
 
     async def get_last_by_report_type(
         self, *, type: ReportType, db_session: AsyncSession | None = None
-    ):
+    ) -> OzonReport | None:
         stmt = (
             select(OzonReport)
             .where(OzonReport.report_type == type)

@@ -29,7 +29,7 @@ class OnlyOneAdminUserException(HTTPException, Generic[ModelType]):
         if id:
             super().__init__(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Unable to add the extra {model.__name__}.",
+                detail=f"Unable to add extra user with role {model.__name__}.",
                 headers=headers,
             )
             return

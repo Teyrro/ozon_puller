@@ -1,4 +1,5 @@
 from collections.abc import Coroutine
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -7,17 +8,21 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import crud
 from app.db.session import SessionLocal
+from app.schemas.ozon_data_schema import IOzonDataCreate
+from app.schemas.ozon_report_schema import IOzonReportCreate
+from app.schemas.ozon_requests_schema import ReportType
 from app.schemas.role_schema import IRoleEnum
 from app.schemas.user_schema import IUserCreate
 from app.tests.utils.utils import random_email, random_lower_string
+from app.utils.getURL import getURL
 
 
 async def user_authentication_headers(
     *, client: AsyncClient, email: str, password: str
 ) -> dict[str, str]:
     data = {"username": email, "password": password}
-
-    r = await client.post("login/access-token", data=data)
+    url = await getURL("/login/access-token")
+    r = await client.post(url, data=data)
     response = r.json()
     auth_token = response["access_token"]
     headers = {"Authorization": f"Bearer {auth_token}"}
@@ -51,7 +56,41 @@ async def create_random_user(
         role_id=role_id,
     )
     user = await crud.user.create_with_role(db_session=db, obj_in=user_in)
-    return user
+    return user, password
+
+
+async def create_random_ozon_data(
+    db: AsyncSession,
+):
+    user_in, pswd = await create_random_user(db=db)
+    client_id = random_lower_string()
+    api_key = random_lower_string()
+    ozon_in = IOzonDataCreate(
+        api_key=api_key,
+        client_id=client_id,
+    )
+    ozon_out = await crud.ozon_data.create_credentials(
+        db_session=db, id=user_in.id, obj_in=ozon_in
+    )
+    return ozon_out, user_in, pswd
+
+
+async def create_random_file(
+    db: AsyncSession,
+):
+    file = b"Hello World"
+    users = await crud.user.get_all_id(db_session=db)
+    orm_report = IOzonReportCreate(
+        report=file,
+        ozon_created_at=datetime.now(),
+        report_type=ReportType.seller_products.lower(),
+    )
+    report = await crud.ozon_report.create_seller_report_for_all_users(
+        users=users,
+        report=orm_report,
+        db_session=db,
+    )
+    return report
 
 
 async def authentication_token_from_email(

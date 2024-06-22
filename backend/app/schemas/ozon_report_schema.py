@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlmodel import Field
@@ -13,6 +14,7 @@ class IOzonReportCreate(OzonReportBase):
 class IOzonReportRead(OzonReportBase):
     id: UUID
     report: bytes = Field(exclude=True)
+    created_at: datetime | None
 
 
 # All these fields are optional
